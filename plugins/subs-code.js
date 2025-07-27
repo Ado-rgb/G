@@ -11,8 +11,8 @@ import { makeWASocket } from '../lib/simple.js'
 
 if (!(global.conns instanceof Array)) global.conns = []
 
-let handler = async (m, { conn: _conn, args }) => {
-  const parent = args[0] === 'plz' ? _conn : global.conn
+let handler = async (m, { conn: _conn }) => {
+  const parent = global.conn
 
   async function serbot() {
     const tmpFolder = './Sessions/TEMP'
@@ -52,7 +52,6 @@ let handler = async (m, { conn: _conn, args }) => {
           fs.renameSync(authPath, finalPath)
         } catch {}
         global.conns.push(conn)
-        await parent.reply(m.chat, 'Conectado exitosamente con WhatsApp', m)
       }
 
       if (connection === 'close' && !moved) {
@@ -60,12 +59,12 @@ let handler = async (m, { conn: _conn, args }) => {
       }
     })
 
-    // Pedir código de emparejamiento inmediatamente
+    // Aquí generamos el código solo para quien mandó `.code`
     if (!state.creds.registered) {
       try {
-        let number = m.sender.split('@')[0] // número del que pidió .code
-        number = number.replace(/\D/g, '')  // solo dígitos
-        const code = await conn.requestPairingCode(number)
+        let number = m.sender.split('@')[0]
+        if (!number.startsWith('504')) number = '504' + number // añade tu código de país si hace falta
+        const code = await conn.requestPairingCode('+' + number)
         const formatted = code.match(/.{1,4}/g).join('-')
 
         let txt = `➪ *Código para convertirte en SubBot*\n\n`
@@ -78,7 +77,8 @@ let handler = async (m, { conn: _conn, args }) => {
         txt += `└───────────────────────────\n\n`
         txt += `*Nota:* Solo funciona en este número`
 
-        await parent.reply(m.chat, txt, m)
+        // enviar solo al que pidió `.code`
+        await parent.sendMessage(m.sender, { text: txt })
       } catch (e) {
         await parent.reply(m.chat, 'Error al generar código', m)
       }
