@@ -3,12 +3,13 @@ let handler = m => m
 handler.before = async function (m, { conn }) {
   if (!m.isGroup) return
   let chat = global.db.data.chats[m.chat]
-  if (!chat || !chat.welcome) return
+  if (!chat || chat.welcome !== true) return
 
+  // Solo mensajes de entrada (27) o salida (28)
   if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
 
   let user = m.messageStubParameters[0]
-  let name = await conn.getName(user).catch(() => user.split('@')[0])
+  let name = await conn.getName(user)
   let pp = await conn.profilePictureUrl(user, 'image').catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png')
   let groupName = await conn.getName(m.chat)
 
@@ -17,6 +18,7 @@ handler.before = async function (m, { conn }) {
   let body = ''
 
   if (m.messageStubType === 27) {
+    // Bienvenida
     title = "Nuevo miembro unido ✨"
     body = "¡Nos alegra que estés aquí!"
     text = `*✩ Bienvenido/a (✿❛◡❛)!*  
@@ -26,6 +28,7 @@ handler.before = async function (m, { conn }) {
 
 > _Esperamos que disfrutes tu estadía y participes con respeto._`
   } else if (m.messageStubType === 28) {
+    // Despedida
     title = "Un miembro ha salido 👋"
     body = "Hasta pronto..."
     text = `*✩ Despedida (✿╥﹏╥)*  
