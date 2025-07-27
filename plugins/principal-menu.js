@@ -1,8 +1,15 @@
 let handler = async (m, { conn, usedPrefix }) => {
   try {
+    // Aquí defines el número del bot principal (cambia al tuyo)
+    const numeroPrincipal = '50493059810@s.whatsapp.net'
+    const esBotPrincipal = conn.user?.id?.split(':')[0] === numeroPrincipal.split('@')[0]
+
+    let tipoBot = esBotPrincipal ? 'Bot Principal' : 'Subbot'
+
     let menu = `*¡Hola! Soy ${globalThis.botname}*
 
 > ꕥ *Menú de Comandos* ꕥ
+> _*${tipoBot}*_
 `
 
     let plugins = Object.values(global.plugins)
