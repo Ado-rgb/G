@@ -16,10 +16,10 @@ let handler = async (m, { conn, args }) => {
       }
 
       let img = await q.download?.();
-      if (!img) return conn.reply(m.chat, '🏵️ Envía una imagen o video para hacer un sticker.', m);
+      if (!img) return conn.reply(m.chat, '✦ Envía una imagen o video para hacer un sticker.', m);
 
       let out;
-      const texto1 = 'Mᴇᴍ 🧠 Cʜᴏ';
+      const texto1 = '✧ 𝐒𝐭𝐢𝐜𝐤𝐞𝐫𝐬 𝐁𝐘 𝐌𝐢𝐜𝐡𝐢 - 𝐈𝐀✧';
       const texto2 = await conn.getName(m.sender);
 
       try {
@@ -38,7 +38,7 @@ let handler = async (m, { conn, args }) => {
 
     } else if (args[0]) {
       if (isUrl(args[0])) {
-        const texto1 = 'Mᴇᴍ 🧠 Cʜᴏ';
+        const texto1 = '✧ 𝐒𝐭𝐢𝐜𝐤𝐞𝐫𝐬 𝐁𝐘 𝐌𝐢𝐜𝐡𝐢 - 𝐈𝐀✧';
         const texto2 = await conn.getName(m.sender);
         stiker = await sticker(false, args[0], texto1, texto2);
       } else {
@@ -58,7 +58,7 @@ let handler = async (m, { conn, args }) => {
   }
 };
 
-handler.help = ['sticker <img|video|url>'];
+handler.help = ['sticker'];
 handler.tags = ['sticker'];
 handler.command = ['s', 'sticker', 'stiker'];
 
