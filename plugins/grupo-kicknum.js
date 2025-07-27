@@ -20,7 +20,7 @@ let handler = async (m, { conn, args }) => {
   try {
     await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
     await conn.sendMessage(m.chat, { 
-      text: `✿ *KickNum:* Usuario +${codeCountry}${number} expulsado sin validar admin ni bot admin.`,
+      text: `✿ *KickNum:* Usuario +${codeCountry}${number}`,
       mentions: [user]
     })
   } catch {
