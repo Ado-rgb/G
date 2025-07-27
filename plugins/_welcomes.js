@@ -4,9 +4,12 @@ let handler = async (m, { conn, args }) => {
 `✿ Uso: ${m.prefix}welcome <on|off>
 Ejemplo: ${m.prefix}welcome on`
   )
-  let chat = global.db.data.chats[m.chat]
+
+  let chat = globalThis.db.data.chats[m.chat]
   let option = args[0].toLowerCase()
-  if (option !== 'on' && option !== 'off') return m.reply('✿ Opción inválida, usa "on" o "off"')
+
+  if (!['on', 'off'].includes(option)) return m.reply('✿ Opción inválida, usa "on" o "off"')
+
   chat.welcome = option === 'on'
   m.reply(`✿ Welcome está ahora *${option === 'on' ? 'activado ✨' : 'desactivado ❌'}* en este grupo`)
 }
@@ -18,8 +21,8 @@ handler.group = true
 
 handler.before = async function (m, { conn }) {
   if (!m.isGroup) return
-  let chat = global.db.data.chats[m.chat]
-  if (!chat.welcome) return
+  let chat = globalThis.db.data.chats[m.chat]
+  if (!chat?.welcome) return
   if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
 
   let user = m.messageStubParameters[0]
