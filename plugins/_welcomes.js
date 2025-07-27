@@ -5,7 +5,7 @@ handler.before = async function (m, { conn }) {
   let chat = global.db.data.chats[m.chat]
   if (!chat.welcome) return
 
-  // Solo seguimos si es mensaje stub de entrada (27) o salida (28)
+  
   if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
 
   let user = m.messageStubParameters[0]
@@ -20,7 +20,7 @@ handler.before = async function (m, { conn }) {
 
   if (m.messageStubType === 27) {
     // Bienvenida
-    title = "Nuevo miembro unido ✨"
+    title = "Nuevo miembro ✨"
     body = "¡Nos alegra que estés aquí!"
     text = `*✩ Bienvenido/a (✿❛◡❛)!*  
 ❑ *Nombre ›* ${name}
