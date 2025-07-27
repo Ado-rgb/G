@@ -1,94 +1,69 @@
-import {
-  useMultiFileAuthState,
-  fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore
-} from '@whiskeysockets/baileys'
-import crypto from 'crypto'
-import fs from 'fs'
-import pino from 'pino'
-import NodeCache from 'node-cache'
-import { makeWASocket } from '../lib/simple.js'
+const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = (await import("@whiskeysockets/baileys"))
+import qrcode from "qrcode"
+import fs from "fs"
+import path from "path"
+import pino from "pino"
+import * as ws from "ws"
+import chalk from "chalk"
+import { makeWASocket } from "../lib/simple.js"
 
-if (!(global.conns instanceof Array)) global.conns = []
+const { CONNECTING } = ws
+const TEMP_DIR = "./temp"
+const SOCKETS_DIR = "./Sockets"
 
-let handler = async (m, { conn: _conn }) => {
-  const parent = global.conn
+if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true })
+if (!fs.existsSync(SOCKETS_DIR)) fs.mkdirSync(SOCKETS_DIR, { recursive: true })
 
-  async function serbot() {
-    const tmpFolder = './Sessions/TEMP'
-    if (!fs.existsSync(tmpFolder)) fs.mkdirSync(tmpFolder, { recursive: true })
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+    let id = `${m.sender.split`@`[0]}`
+    let tempPath = path.join(TEMP_DIR, id)
 
-    const authFolderB = crypto.randomBytes(10).toString('hex').slice(0, 8)
-    const authPath = `${tmpFolder}/${authFolderB}`
-    fs.mkdirSync(authPath, { recursive: true })
+    if (!fs.existsSync(tempPath)) fs.mkdirSync(tempPath, { recursive: true })
 
-    const { state, saveCreds } = await useMultiFileAuthState(authPath)
-    const msgRetryCounterCache = new NodeCache()
-    const { version } = await fetchLatestBaileysVersion()
+    const { state, saveCreds } = await useMultiFileAuthState(tempPath)
+    let { version } = await fetchLatestBaileysVersion()
 
-    const conn = makeWASocket({
-      logger: pino({ level: 'silent' }),
-      printQRInTerminal: false,
-      browser: ['Ubuntu', 'Chrome', '20.0.04'],
-      auth: {
-        creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' }))
-      },
-      markOnlineOnConnect: true,
-      generateHighQualityLinkPreview: true,
-      msgRetryCounterCache,
-      version
+    let sock = makeWASocket({
+        logger: pino({ level: "fatal" }),
+        printQRInTerminal: false,
+        auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })) },
+        browser: ["SubBot", "Chrome", "1.0.0"],
+        version
     })
 
-    let moved = false
+    sock.ev.on("connection.update", async ({ connection, qr }) => {
+        if (qr && command === "qr") {
+            await conn.sendMessage(m.chat, {
+                image: await qrcode.toBuffer(qr, { scale: 8 }),
+                caption: "Escanea este QR para vincular tu cuenta."
+            }, { quoted: m })
+        }
 
-    conn.ev.on('connection.update', async (update) => {
-      const { connection } = update
+        if (qr && command === "code") {
+            let code = await sock.requestPairingCode(m.sender.split`@`[0])
+            code = code.match(/.{1,4}/g)?.join("-")
+            await m.reply(`Código de emparejamiento:\n\n${code}`)
+        }
 
-      if (connection === 'open' && !moved) {
-        moved = true
-        try {
-          const finalPath = `./Sessions/Sockets/${authFolderB}`
-          fs.renameSync(authPath, finalPath)
-        } catch {}
-        global.conns.push(conn)
-      }
+        if (connection === "open") {
+            let finalPath = path.join(SOCKETS_DIR, id)
+            if (!fs.existsSync(finalPath)) fs.mkdirSync(finalPath, { recursive: true })
 
-      if (connection === 'close' && !moved) {
-        try { fs.rmSync(authPath, { recursive: true, force: true }) } catch {}
-      }
+            // Mover credenciales a Sockets
+            for (let file of fs.readdirSync(tempPath)) {
+                fs.renameSync(path.join(tempPath, file), path.join(finalPath, file))
+            }
+            fs.rmdirSync(tempPath, { recursive: true })
+
+            console.log(chalk.green(`Sub-Bot ${id} conectado y guardado en ${finalPath}`))
+        }
     })
 
-    if (!state.creds.registered) {
-      try {
-        let number = m.sender.split('@')[0]
-        if (!number.startsWith('504')) number = '504' + number
-        if (!number.startsWith('+')) number = '+' + number // añade +
-
-        const code = await conn.requestPairingCode(number)
-        const formatted = code.match(/.{1,4}/g).join('-')
-
-        let txt = `➪ *Código para convertirte en SubBot*\n\n`
-        txt += `┌─── ✩ *Instrucciones* ✩ ───\n`
-        txt += `│ 1. En WhatsApp toca *Menú*\n`
-        txt += `│ 2. Selecciona *Dispositivos vinculados*\n`
-        txt += `│ 3. Elige *Vincular un dispositivo*\n`
-        txt += `│ 4. Ingresa este código:\n`
-        txt += `│\n│    *${formatted}*\n`
-        txt += `└───────────────────────────\n\n`
-        txt += `*Nota:* Solo funciona en este número`
-
-        await parent.sendMessage(m.sender, { text: txt }) // Solo a quien pidió .code
-      } catch (e) {
-        await parent.reply(m.chat, 'Error al generar código, revisa tu número', m)
-      }
-    }
-  }
-
-  serbot()
+    sock.ev.on("creds.update", saveCreds)
 }
 
-handler.help = ['code']
-handler.tags = ['subbots']
-handler.command = ['code']
+handler.help = ["qr", "code"]
+handler.tags = ["serbot"]
+handler.command = ["qr", "code"]
+
 export default handler
