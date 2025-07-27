@@ -1,56 +1,64 @@
 let handler = m => m
 
 handler.before = async function (m, { conn }) {
-  if (!m.isGroup) return
-  let chat = global.db.data.chats[m.chat]
-  if (!chat || !chat.welcome) return
+  try {
+    if (!m.isGroup) return
+    const chat = globalThis?.db?.data?.chats?.[m.chat]
+    if (!chat?.welcome) return
 
-  if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
+    if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
 
-  let user = m.messageStubParameters[0]
-  let name = await conn.getName(user).catch(() => user.split('@')[0])
-  let number = user.split('@')[0].replace(/[^0-9]/g, '')
-  let pp = await conn.profilePictureUrl(user, 'image').catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png')
-  let groupName = await conn.getName(m.chat)
+    let user = m.messageStubParameters?.[0]
+    if (!user) return
 
-  let text = ''
-  let title = ''
-  let body = ''
+    let name = await conn.getName(user).catch(() => user.split('@')[0])
+    let number = user.split('@')[0].replace(/[^0-9]/g, '')
+    let pp = await conn.profilePictureUrl(user, 'image').catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png')
+    let groupName = await conn.getName(m.chat)
 
-  if (m.messageStubType === 27) {
-    title = "Nuevo miembro ✨"
-    body = "¡Nos alegra que estés aquí!"
-    text = `*✩ Bienvenido/a (✿❛◡❛)!*  
+    let text = ''
+    let title = ''
+    let body = ''
+
+    if (m.messageStubType === 27) {
+      title = "Nuevo miembro ✨"
+      body = "¡Nos alegra que estés aquí!"
+      text = `*✩ Bienvenido/a (✿❛◡❛)!*  
 ❑ *Nombre ›* ${name}
 ✿ *Número ›* @${number}
 ♡ *Grupo ›* ${groupName}
 
 > _Esperamos que disfrutes tu estadía y participes con respeto._`
-  } else if (m.messageStubType === 28) {
-    title = "Un miembro ha salido 👋"
-    body = "Hasta pronto..."
-    text = `*✩ Despedida (✿╥﹏╥)*  
+    } else if (m.messageStubType === 28) {
+      title = "Un miembro ha salido 👋"
+      body = "Hasta pronto..."
+      text = `*✩ Despedida (✿╥﹏╥)*  
 ❑ *Nombre ›* ${name}
 ✿ *Número ›* @${number}
 ♡ *Grupo ›* ${groupName}
 
 > _Lamentamos tu partida, ¡te esperamos de vuelta algún día!_`
-  }
-
-  await conn.sendMessage(m.chat, {
-    text,
-    contextInfo: {
-      mentionedJid: [user],
-      externalAdReply: {
-        title,
-        body,
-        thumbnailUrl: pp,
-        sourceUrl: "https://myapiadonix.vercel.app",
-        mediaType: 1,
-        renderLargerThumbnail: true
-      }
     }
-  })
+
+    console.log(`[Welcome] Enviando mensaje a ${m.chat} para ${user}`)
+
+    await conn.sendMessage(m.chat, {
+      text,
+      contextInfo: {
+        mentionedJid: [user],
+        externalAdReply: {
+          title,
+          body,
+          thumbnailUrl: pp,
+          sourceUrl: "https://myapiadonix.vercel.app",
+          mediaType: 1,
+          renderLargerThumbnail: true
+        }
+      }
+    })
+  } catch (e) {
+    console.error('[Welcome Error]', e)
+  }
 }
 
 export default handler
