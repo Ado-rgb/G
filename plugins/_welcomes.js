@@ -5,36 +5,33 @@ handler.before = async function (m, { conn }) {
   let chat = global.db.data.chats[m.chat]
   if (!chat.welcome) return
 
-  
   if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
 
   let user = m.messageStubParameters[0]
-  let name = await conn.getName(user)
+  let name = await conn.getName(user).catch(() => user.split('@')[0])
+  let number = user.split('@')[0].replace(/[^0-9]/g, '')
   let pp = await conn.profilePictureUrl(user, 'image').catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png')
   let groupName = await conn.getName(m.chat)
 
-  // Diferenciamos texto según tipo de evento
   let text = ''
   let title = ''
   let body = ''
 
   if (m.messageStubType === 27) {
-    // Bienvenida
     title = "Nuevo miembro ✨"
     body = "¡Nos alegra que estés aquí!"
     text = `*✩ Bienvenido/a (✿❛◡❛)!*  
 ❑ *Nombre ›* ${name}
-✿ *Número ›* @${user.split('@')[0]}
+✿ *Número ›* @${number}
 ♡ *Grupo ›* ${groupName}
 
 > _Esperamos que disfrutes tu estadía y participes con respeto._`
   } else if (m.messageStubType === 28) {
-    // Despedida
     title = "Un miembro ha salido 👋"
     body = "Hasta pronto..."
     text = `*✩ Despedida (✿╥﹏╥)*  
 ❑ *Nombre ›* ${name}
-✿ *Número ›* @${user.split('@')[0]}
+✿ *Número ›* @${number}
 ♡ *Grupo ›* ${groupName}
 
 > _Lamentamos tu partida, ¡te esperamos de vuelta algún día!_`
