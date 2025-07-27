@@ -43,7 +43,7 @@ let handler = async (m, { conn }) => {
   let cwd = process.cwd()
 
   let text = `
-⚡ ꕥ *Estadísticas del Bot y Sistema* ꕥ ⚡
+ꕥ *Estadísticas del Bot y Sistema* ꕥ
 
 ⏱️ Tiempo respuesta: *${ping} ms*
 🧠 RAM usada: *${usedMem.toFixed(2)}* MB / *${totalMem.toFixed(2)}* MB (${memPercent.toFixed(2)}%)
