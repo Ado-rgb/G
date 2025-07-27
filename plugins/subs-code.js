@@ -178,7 +178,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
 
 }
 handler.help = ['code']
-handler.tags = ['serbot']
+handler.tags = ['subbots']
 handler.command = ['code', 'codebotraro']
 handler.rowner = false
 
