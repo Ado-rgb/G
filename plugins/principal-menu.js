@@ -9,7 +9,8 @@ let handler = async (m, { conn, usedPrefix }) => {
     let menu = `*¡Hola! Soy ${globalThis.botname}*
 
 > ꕥ *Menú de Comandos* ꕥ
-> _*${tipoBot}*_
+
+> *Socket :* _*${tipoBot}*_
 `
 
     let plugins = Object.values(global.plugins)
