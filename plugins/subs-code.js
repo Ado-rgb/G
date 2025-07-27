@@ -3,7 +3,6 @@ import {
   useMultiFileAuthState, 
   DisconnectReason, 
   fetchLatestBaileysVersion, 
-  makeCacheableSignalKeyStore, 
   jidNormalizedUser 
 } from '@whiskeysockets/baileys'
 import pino from 'pino'
@@ -21,25 +20,23 @@ let handler = async (m, { conn: parentConn, args, usedPrefix, command }) => {
       fs.mkdirSync(globalThis.jadi, { recursive: true })
     }
 
-    // Generar id random de 8 caracteres para sesión
+    // Generar id random para la carpeta de la sesión
     let authFolder = crypto.randomBytes(5).toString('hex').slice(0, 8)
+    const authPath = path.join(globalThis.jadi, authFolder)
 
-    // Si el usuario manda un código base64, guardamos creds.json para login sin QR
+    // Si te pasan creds base64, guardalas para login sin QR
     if (args[0]) {
       try {
         const credsData = JSON.parse(Buffer.from(args[0], 'base64').toString('utf-8'))
-        const pathCreds = path.join(globalThis.jadi, authFolder, 'creds.json')
-        if (!fs.existsSync(path.join(globalThis.jadi, authFolder))) {
-          fs.mkdirSync(path.join(globalThis.jadi, authFolder), { recursive: true })
-        }
-        fs.writeFileSync(pathCreds, JSON.stringify(credsData, null, 2))
-      } catch (e) {
+        if (!fs.existsSync(authPath)) fs.mkdirSync(authPath, { recursive: true })
+        fs.writeFileSync(path.join(authPath, 'creds.json'), JSON.stringify(credsData, null, 2))
+      } catch {
         return m.reply('❌ Código de sesión inválido o corrupto.')
       }
     }
 
-    // Cargar estado de la sesión
-    const { state, saveCreds } = await useMultiFileAuthState(path.join(globalThis.jadi, authFolder))
+    // Cargar estado
+    const { state, saveCreds } = await useMultiFileAuthState(authPath)
     const { version } = await fetchLatestBaileysVersion()
 
     // Crear socket subbot
@@ -53,40 +50,35 @@ let handler = async (m, { conn: parentConn, args, usedPrefix, command }) => {
 
     sock.ev.on('creds.update', saveCreds)
 
-    // Generar linking code (8 dígitos en formato XXXX-XXXX)
-    const rawCode = crypto.randomBytes(4).toString('hex').toUpperCase()
-    const code = rawCode.match(/.{1,4}/g).join('-')
+    // Pedir código real para vinculación WhatsApp
+    const phoneNumber = m.sender.split('@')[0]
+    const cleanNumber = phoneNumber.replace(/\D/g, '')
+    const code = await sock.requestPairingCode(cleanNumber)
 
-    // Enviar instrucciones y código de vinculación al chat
+    // Enviar el código al usuario
     await parentConn.sendMessage(m.chat, {
       text: `✿ *SubBot: Vinculación*\n\nUsa este código para vincular tu Sub-Bot con WhatsApp:\n\n*${code}*\n\nPasos:\n1. En WhatsApp: Configuración > Dispositivos vinculados\n2. Selecciona "Vincular un dispositivo"\n3. Escribe el código exacto\n\nEste código es único para tu sesión.`
     }, { quoted: m })
 
     // Manejar eventos de conexión
-    sock.ev.on('connection.update', async (update) => {
-      const { connection, lastDisconnect } = update
-
-      if (connection === 'close') {
-        const reason = lastDisconnect?.error?.output?.statusCode
-        if (reason !== DisconnectReason.loggedOut) {
-          // Intentar reconectar o limpiar
-          try {
-            await sock.logout()
-          } catch {}
-          global.conns = global.conns.filter(c => c !== sock)
-        } else {
-          // Sesión cerrada, eliminar subbot
-          global.conns = global.conns.filter(c => c !== sock)
-          // Opcional: borrar sesión de disco
-          // fs.rmdirSync(path.join(globalThis.jadi, authFolder), { recursive: true, force: true })
-        }
-      }
-
+    sock.ev.on('connection.update', async ({ connection, lastDisconnect }) => {
       if (connection === 'open') {
         global.conns.push(sock)
         await parentConn.sendMessage(m.chat, {
           text: `✿ *SubBot conectado*\nID sesión: ${authFolder}\nNúmero vinculado: ${sock.user.id}`
         }, { quoted: m })
+      }
+      if (connection === 'close') {
+        const reason = lastDisconnect?.error?.output?.statusCode
+        if (reason !== DisconnectReason.loggedOut) {
+          try { await sock.logout() } catch {}
+          global.conns = global.conns.filter(c => c !== sock)
+          await parentConn.sendMessage(m.chat, { text: '⚠️ SubBot desconectado inesperadamente.' }, { quoted: m })
+        } else {
+          global.conns = global.conns.filter(c => c !== sock)
+          // opcional borrar sesión
+          // fs.rmdirSync(authPath, { recursive: true, force: true })
+        }
       }
     })
 
