@@ -1,7 +1,5 @@
 let handler = async (m, { conn, args, usedPrefix, command }) => {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos')
-  if (!m.isGroupAdmins) return m.reply('❌ Solo admins pueden usar esto')
-  if (!m.isBotAdmin) return m.reply('❌ Necesito ser admin para esto')
 
   if (!args[0]) return m.reply(
 `✿ *Uso correcto ›* ${usedPrefix + command} <función>
@@ -31,7 +29,6 @@ Ejemplo:
     chat[option] = true
     m.reply(`✿ *${option}* activado ✨`)
 
-    // Si activan welcome manda mensaje de confirmación decorado
     if (option === 'welcome') {
       await conn.sendMessage(m.chat, {
         text: `✿ *Welcome activado* en este grupo\n> Bienvenidos y bienvenidas siempre.`,
