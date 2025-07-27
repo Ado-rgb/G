@@ -199,8 +199,7 @@ async function createSubBotConnection(sessionId) {
                 return msg?.message || "";
             } catch (error) {
                 return "";
-            }
-        },
+            }},
         msgRetryCounterCache: new NodeCache({ stdTTL: 0, checkperiod: 0 }),
         userDevicesCache: new NodeCache({ stdTTL: 0, checkperiod: 0 }),
         defaultQueryTimeoutMs: undefined,
@@ -211,33 +210,47 @@ async function createSubBotConnection(sessionId) {
     };
 
     const subBotConn = makeWASocket(subBotConnectionOptions);
-    globalThis.conns[sessionId] = subBotConn; // Add to global conns
-
-    subBotConn.ev.on('connection.update', (update) => {
+    
+    // Add event listeners for the sub-bot connection
+    subBotConn.ev.on('connection.update', async (update) => { // Made async to allow await reloadHandler
         const { connection, lastDisconnect, isNewLogin } = update;
+
+        if (isNewLogin) {
+            subBotConn.isInit = true;
+        }
+
         if (connection === 'open') {
             const userJid = jidNormalizedUser(subBotConn.user.id);
             const userName = subBotConn.user.name || subBotConn.user.verifiedName || "Desconocido";
             console.log(chalk.green.bold(`\n🟢 Sub-bot [${sessionId}] conectado: +${userJid.split("@")[0]} - ${userName}`));
+            // IMPORTANT: Add to global.conns ONLY when connected
+            globalThis.conns[sessionId] = subBotConn; 
+            // Bind the handler to the sub-bot connection
+            subBotConn.handler = handler.handler.bind(subBotConn);
+            subBotConn.ev.on('messages.upsert', subBotConn.handler);
         } else if (connection === 'close') {
             const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-            console.log(chalk.red.bold(`\n🔴 Sub-bot [${sessionId}] desconectado. Reason: ${reason}`));
+            console.log(chalk.red.bold(`\n🔴 Sub-bot [${sessionId}] desconectado. Motivo: ${reason}`));
             // Remove from global.conns when disconnected
-            delete globalThis.conns[sessionId];
+            if (globalThis.conns[sessionId]) {
+                globalThis.conns[sessionId].ev.removeAllListeners(); // Clean up listeners
+                delete globalThis.conns[sessionId];
+            }
+
             if (reason === DisconnectReason.loggedOut) {
                 console.log(chalk.bold.redBright(`\n🍀 Sub-bot [${sessionId}] desconectado permanentemente. Borrando credenciales.`));
                 rmSync(sessionPath, { recursive: true, force: true }); // Delete session folder
             } else {
                 console.log(chalk.bold.yellowBright(`\n🔄 Intentando reconectar Sub-bot [${sessionId}]...`));
-                // Optional: Implement a retry mechanism for sub-bots here if needed
+                // Attempt to reconnect by re-creating the connection
+                setTimeout(() => createSubBotConnection(sessionId), 3000); // Retry after 3 seconds
             }
         }
     });
 
     subBotConn.ev.on('creds.update', saveSubBotCreds.bind(subBotConn, true));
-    // You might want a separate handler for sub-bots or pass messages to the main handler
-    // subBotConn.ev.on('messages.upsert', subBotHandler.bind(subBotConn)); 
-    console.log(chalk.blue(`Attempting to connect sub-bot: ${sessionId}`));
+    
+    console.log(chalk.blue(`Intentando conectar sub-bot: ${sessionId}`));
 }
 
 async function startSubBots() {
@@ -248,7 +261,8 @@ async function startSubBots() {
 
     const sessionIds = readdirSync(socketsDir).filter(name => {
         const fullPath = join(socketsDir, name);
-        return statSync(fullPath).isDirectory() && /^[0-9a-f]{8}$/.test(name); // Basic check for 8-char hex IDs
+        // Only process directories with a 'creds.json' file inside
+        return statSync(fullPath).isDirectory() && existsSync(join(fullPath, 'creds.json')) && /^[0-9a-fA-F]{8,}$/.test(name); // Relaxed regex for IDs
     });
 
     for (const sessionId of sessionIds) {
@@ -351,7 +365,9 @@ console.log(chalk.bold.redBright(`\n🎍 Conexión cerrada, conectese nuevamente
 process.on('uncaughtException', console.error)
 
 let isInit = true;
+// Import the handler module once at the top level
 let handler = await import('./handler.js')
+
 globalThis.reloadHandler = async function(restatConn) {
 try {
 const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error);
