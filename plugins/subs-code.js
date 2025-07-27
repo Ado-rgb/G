@@ -1,7 +1,7 @@
 import {
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore,
+  makeCacheableSignalKeyStore
 } from '@whiskeysockets/baileys'
 import crypto from 'crypto'
 import fs from 'fs'
@@ -22,94 +22,67 @@ let handler = async (m, { conn: _conn, args }) => {
     const authPath = `${tmpFolder}/${authFolderB}`
     fs.mkdirSync(authPath, { recursive: true })
 
-    if (args[0]) {
-      try {
-        const credsData = JSON.parse(Buffer.from(args[0], 'base64').toString('utf-8'))
-        fs.writeFileSync(`${authPath}/creds.json`, JSON.stringify(credsData, null, '\t'))
-      } catch {
-        await parent.reply(m.chat, '*Error: Credenciales inválidas*', m)
-        return
-      }
-    }
-
     const { state, saveCreds } = await useMultiFileAuthState(authPath)
     const msgRetryCounterCache = new NodeCache()
     const { version } = await fetchLatestBaileysVersion()
 
-    const connectionOptions = {
+    const conn = makeWASocket({
       logger: pino({ level: 'silent' }),
       printQRInTerminal: false,
       browser: ['Ubuntu', 'Chrome', '20.0.04'],
       auth: {
         creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
+        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' }))
       },
       markOnlineOnConnect: true,
       generateHighQualityLinkPreview: true,
       msgRetryCounterCache,
-      version,
-    }
+      version
+    })
 
-    const conn = makeWASocket(connectionOptions)
-    let isConnected = false
+    let moved = false
 
     conn.ev.on('connection.update', async (update) => {
       const { connection } = update
 
-      if (connection === 'open') {
-        isConnected = true
-
+      if (connection === 'open' && !moved) {
+        moved = true
         try {
           const finalPath = `./Sessions/Sockets/${authFolderB}`
           fs.renameSync(authPath, finalPath)
         } catch {}
-
         global.conns.push(conn)
-
-        await parent.reply(
-          m.chat,
-          '➪ *Conectado exitosamente con WhatsApp*\n\n*Nota:* Esto es temporal\nSi el Bot principal se reinicia o se desactiva, todos los sub bots también lo harán',
-          m,
-        )
+        await parent.reply(m.chat, 'Conectado exitosamente con WhatsApp', m)
       }
 
-      if (!state.creds.registered && connection === 'open') {
-        try {
-          // Obtener número en formato internacional sin @s.whatsapp.net
-          const senderNumber = m.sender.split('@')[0]
-          if (!senderNumber) return
-
-          // Asegúrate que esté limpio, solo números y el código país
-          let cleanNumber = senderNumber.replace(/\D/g, '')
-          if (cleanNumber.length < 8) return
-
-          const pairingCode = await conn.requestPairingCode(cleanNumber)
-          if (!pairingCode) return
-
-          const formattedCode = pairingCode.match(/.{1,4}/g).join('-')
-
-          let txt = `➪ *Código para convertirte en SubBot*\n\n`
-          txt += `┌─── ✩ *Instrucciones* ✩ ───\n`
-          txt += `│ 1. En WhatsApp toca *Menú* (los 3 puntos)\n`
-          txt += `│ 2. Selecciona *Dispositivos vinculados*\n`
-          txt += `│ 3. Elige *Vincular un dispositivo*\n`
-          txt += `│ 4. Ingresa este código:\n`
-          txt += `│\n│    *${formattedCode}*\n`
-          txt += `└───────────────────────────\n\n`
-          txt += `*Nota:* Solo funciona en el número que solicitó el código.`
-
-          await parent.reply(m.chat, txt, m)
-        } catch (e) {
-          // si algo falla, solo ignora
-        }
-      }
-
-      if (connection === 'close' && !isConnected) {
-        try {
-          fs.rmSync(authPath, { recursive: true, force: true })
-        } catch {}
+      if (connection === 'close' && !moved) {
+        try { fs.rmSync(authPath, { recursive: true, force: true }) } catch {}
       }
     })
+
+    // Pedir código de emparejamiento inmediatamente
+    if (!state.creds.registered) {
+      try {
+        let number = m.sender.split('@')[0] // número del que pidió .code
+        number = number.replace(/\D/g, '')  // solo dígitos
+        const code = await conn.requestPairingCode(number)
+        const formatted = code.match(/.{1,4}/g).join('-')
+
+        let txt = `➪ *Código para convertirte en SubBot*\n\n`
+        txt += `┌─── ✩ *Instrucciones* ✩ ───\n`
+        txt += `│ 1. En WhatsApp toca *Menú*\n`
+        txt += `│ 2. Selecciona *Dispositivos vinculados*\n`
+        txt += `│ 3. Elige *Vincular un dispositivo*\n`
+        txt += `│ 4. Ingresa este código:\n`
+        txt += `│\n│    *${formatted}*\n`
+        txt += `└───────────────────────────\n\n`
+        txt += `*Nota:* Solo funciona en este número`
+
+        await parent.reply(m.chat, txt, m)
+      } catch (e) {
+        await parent.reply(m.chat, 'Error al generar código', m)
+      }
+    }
   }
 
   serbot()
