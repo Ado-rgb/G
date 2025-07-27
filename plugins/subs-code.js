@@ -4,49 +4,47 @@ const {
   fetchLatestBaileysVersion,
   MessageRetryMap,
   makeCacheableSignalKeyStore,
-  jidNormalizedUser
+  jidNormalizedUser,
+  makeInMemoryStore
 } = await import('@whiskeysockets/baileys')
-import moment from 'moment-timezone';
-import NodeCache from 'node-cache';
-import readline from 'readline';
-import qrcode from "qrcode";
-import crypto from 'crypto';
-import fs from "fs";
-import pino from 'pino';
-import * as ws from 'ws';
-const { CONNECTING } = ws;
-import { Boom } from '@hapi/boom';
-import { makeWASocket } from '../lib/simple.js';
+import moment from 'moment-timezone'
+import NodeCache from 'node-cache'
+import readline from 'readline'
+import qrcode from "qrcode"
+import crypto from 'crypto'
+import fs from "fs"
+import pino from 'pino'
+import * as ws from 'ws'
+const { CONNECTING } = ws
+import { Boom } from '@hapi/boom'
+import { makeWASocket } from '../lib/simple.js'
 
-if (!(global.conns instanceof Array)) global.conns = [];
+if (!(global.conns instanceof Array)) global.conns = []
+
+const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
 
 let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => {
 
-const bot = global.db.data.settings[conn.user.jid] || {};
-
-
   async function serbot() {
-    let authFolderB = m.sender.split('@')[0];
-    const userFolderPath = `./Sessions/Sockets/${authFolderB}`;
+    let authFolderB = m.sender.split('@')[0]
+    const userFolderPath = `./Sessions/Sockets/${authFolderB}`
 
     if (!fs.existsSync(userFolderPath)) {
-      fs.mkdirSync(userFolderPath, { recursive: true });
+      fs.mkdirSync(userFolderPath, { recursive: true })
     }
 
-    args[0] ? fs.writeFileSync(`${userFolderPath}/creds.json`, JSON.stringify(JSON.parse(Buffer.from(args[0], "base64").toString("utf-8")), null, '\t')) : "";
+    if (args[0]) {
+      fs.writeFileSync(`${userFolderPath}/creds.json`,
+        JSON.stringify(JSON.parse(Buffer.from(args[0], "base64").toString("utf-8")), null, '\t'))
+    }
 
-    const { state, saveState, saveCreds } = await useMultiFileAuthState(userFolderPath);
-    const msgRetryCounterMap = (MessageRetryMap) => { };
-    const msgRetryCounterCache = new NodeCache();
-    const { version } = await fetchLatestBaileysVersion();
-    let phoneNumber = m.sender.split('@')[0];
+    const { state, saveCreds } = await useMultiFileAuthState(userFolderPath)
+    const msgRetryCounterCache = new NodeCache()
+    const { version } = await fetchLatestBaileysVersion()
+    let phoneNumber = m.sender.split('@')[0]
 
-    const methodCodeQR = process.argv.includes("qr");
-    const methodCode = !!phoneNumber || process.argv.includes("code");
-    const MethodMobile = process.argv.includes("mobile");
-
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    const question = (texto) => new Promise((resolver) => rl.question(texto, resolver));
+    const methodCode = !!phoneNumber || process.argv.includes("code")
+    const MethodMobile = process.argv.includes("mobile")
 
     const connectionOptions = {
       logger: pino({ level: 'silent' }),
@@ -60,125 +58,58 @@ const bot = global.db.data.settings[conn.user.jid] || {};
       markOnlineOnConnect: true,
       generateHighQualityLinkPreview: true,
       getMessage: async (clave) => {
-        let jid = jidNormalizedUser(clave.remoteJid);
-        let msg = await store.loadMessage(jid, clave.id);
-        return msg?.message || "";
+        let jid = jidNormalizedUser(clave.remoteJid)
+        let msg = await store.loadMessage(jid, clave.id)
+        return msg?.message || ""
       },
       msgRetryCounterCache,
-      msgRetryCounterMap,
-      defaultQueryTimeoutMs: undefined,
+      msgRetryCounterMap: {},
       version
-    };
+    }
 
-    let conn = makeWASocket(connectionOptions);
+    let conn = makeWASocket(connectionOptions)
 
     if (methodCode && !conn.authState.creds.registered) {
-      if (!phoneNumber) process.exit(0);
-      let cleanedNumber = phoneNumber.replace(/[^0-9]/g, '');
+      let cleanedNumber = phoneNumber.replace(/[^0-9]/g, '')
       setTimeout(async () => {
-        let codeBot = await conn.requestPairingCode(cleanedNumber);
-        codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
-            let txt = `┌  🜲  *Usa este Código para convertirte en un Sub Bot*\n`
-            txt += `│  ❀  Pasos\n`
-            txt += `│  ❀  *1* : Haga click en los 3 puntos\n`
-            txt += `│  ❀  *2* : Toque dispositivos vinculados\n`
-            txt += `│  ❀  *3* : Selecciona *Vincular con el número de teléfono*\n` 
-            txt += `└  ❀  *4* : Escriba el Codigo\n\n`
-            txt += `*❖ Nota:* Este Código solo funciona en el número en el que se solicitó.`;
-        await parent.reply(m.chat, txt, m);
-        await parent.reply(m.chat, codeBot, m);
-        rl.close();
-      }, 3000);
+        let codeBot = await conn.requestPairingCode(cleanedNumber)
+        codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot
+        let txt = `┌  🜲  *Usa este Código para convertirte en un Sub Bot*\n`
+        txt += `│  ❀  Pasos\n`
+        txt += `│  ❀  *1* : Haga click en los 3 puntos\n`
+        txt += `│  ❀  *2* : Toque dispositivos vinculados\n`
+        txt += `│  ❀  *3* : Selecciona *Vincular con el número de teléfono*\n`
+        txt += `└  ❀  *4* : Escriba el Codigo\n\n`
+        txt += `*❖ Nota:* Este Código solo funciona en el número en el que se solicitó.`
+        await _conn.reply(m.chat, txt, m)
+        await _conn.reply(m.chat, codeBot, m)
+      }, 3000)
     }
 
-    conn.isInit = false;
-    let isInit = true;
+    conn.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect } = update
+      const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
 
-    async function connectionUpdate(update) {
-      const { connection, lastDisconnect, isNewLogin, qr } = update;
-      if (isNewLogin) conn.isInit = true;
-      const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
-
-      if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
-        let i = global.conns.indexOf(conn);
-        if (i < 0) return console.log(await creloadHandler(true).catch(console.error));
-        delete global.conns[i];
-        global.conns.splice(i, 1);
-        fs.rmdirSync(userFolderPath, { recursive: true });
-        if (code !== DisconnectReason.connectionClosed) {
-          parent.sendMessage(m.chat, { text: "Conexión perdida.." }, { quoted: m });
-        }
+      if (connection === 'open') {
+        global.conns.push(conn)
+        await _conn.reply(m.chat, 'Conectado con éxito', m)
       }
 
-      if (global.db.data == null) loadDatabase();
-
-      if (connection == 'open') {
-        conn.isInit = true;
-        global.conns.push(conn);
-        await parent.reply(m.chat, args[0] ? 'Conectado con éxito' : `❀ ᥴ᥆ᥒᥱᥴ𝗍ᥲძ᥆ ᥱ᥊і𝗍᥆sᥲmᥱᥒ𝗍ᥱ ᥲ ᥕһᥲ𝗍sᥲ⍴⍴, ᥣᥲ ⍴r᥆́᥊іmᥲ ᥎ᥱz 𝗊ᥙᥱ sᥱ ძᥱsᥴ᥆ᥒᥱᥴ𝗍ᥱ ᥙsᥱ *#delsesion* ᥡ ძᥱ ᥒᥙᥱ᥎᥆ *#code*.\n\n> ${dev}`, m);
-        await sleep(5000);
-        if (args[0]) return;
-
-        await parent.reply(conn.user.jid, `La siguiente vez que se conecte envía el siguiente mensaje para iniciar sesión sin utilizar otro código `, m);
-        await parent.sendMessage(conn.user.jid, { text: usedPrefix + command + " " + Buffer.from(fs.readFileSync(`./Crow/${authFolderB}/creds.json`), "utf-8").toString("base64") }, { quoted: m });
+      if (code && code !== DisconnectReason.loggedOut) {
+        fs.rmSync(userFolderPath, { recursive: true, force: true })
+        _conn.sendMessage(m.chat, { text: "Conexión perdida.." }, { quoted: m })
       }
-    }
+    })
 
-    setInterval(async () => {
-      if (!conn.user) {
-        try { conn.ws.close() } catch { }
-        conn.ev.removeAllListeners();
-        let i = global.conns.indexOf(conn);
-        if (i < 0) return;
-        delete global.conns[i];
-        global.conns.splice(i, 1);
-      }
-    }, 60000);
-
-    let handler = await import('../handler.js');
-    let creloadHandler = async function (restatConn) {
-      try {
-        const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error);
-        if (Object.keys(Handler || {}).length) handler = Handler;
-      } catch (e) {
-        console.error(e);
-      }
-      if (restatConn) {
-        try { conn.ws.close() } catch { }
-        conn.ev.removeAllListeners();
-        conn = makeWASocket(connectionOptions);
-        isInit = true;
-      }
-
-      if (!isInit) {
-        conn.ev.off('messages.upsert', conn.handler);
-        conn.ev.off('connection.update', conn.connectionUpdate);
-        conn.ev.off('creds.update', conn.credsUpdate);
-      }
-
-      conn.handler = handler.handler.bind(conn);
-      conn.connectionUpdate = connectionUpdate.bind(conn);
-      conn.credsUpdate = saveCreds.bind(conn, true);
-
-      conn.ev.on('messages.upsert', conn.handler);
-      conn.ev.on('connection.update', conn.connectionUpdate);
-      conn.ev.on('creds.update', conn.credsUpdate);
-      isInit = false;
-      return true;
-    };
-    creloadHandler(false);
+    conn.ev.on('creds.update', saveCreds)
   }
 
-  serbot();
-};
+  serbot()
+}
 
-handler.help = ['code'];
-handler.tags = ['serbot'];
-handler.command = ['code', 'Code'];
+handler.help = ['code']
+handler.tags = ['serbot']
+handler.command = ['code', 'Code']
 handler.rowner = false
 
-export default handler;
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+export default handler
