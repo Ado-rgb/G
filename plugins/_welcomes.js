@@ -6,7 +6,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     return m.reply(
 `✿ *Uso correcto ›* ${usedPrefix + command} on/off
 
-> Activa o desactiva la bienvenida y despedida.`
+> Activa o desactiva los mensajes de bienvenida y despedida.`
     )
   }
 
@@ -31,18 +31,19 @@ export default handler
 export async function before(m, { conn }) {
   if (!m.isGroup) return
   let chat = global.db.data.chats[m.chat]
-  if (!chat.welcome) return
+  if (!chat?.welcome) return
 
-  if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
+  // Solo cuando alguien entra o sale
+  if (![27, 28].includes(m.messageStubType)) return
 
-  let user = m.messageStubParameters[0]
+  let user = m.messageStubParameters?.[0]
+  if (!user) return
+
   let name = await conn.getName(user).catch(() => user.split('@')[0])
   let pp = await conn.profilePictureUrl(user, 'image').catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png')
   let groupName = await conn.getName(m.chat)
 
-  let text = ''
-  let title = ''
-  let body = ''
+  let title, body, text
 
   if (m.messageStubType === 27) {
     title = "Nuevo miembro ✨"
@@ -50,18 +51,14 @@ export async function before(m, { conn }) {
     text = `*✩ Bienvenido/a (✿❛◡❛)!*  
 ❑ *Nombre ›* ${name}
 ✿ *Número ›* @${user.split('@')[0]}
-♡ *Grupo ›* ${groupName}
-
-> _Esperamos que disfrutes tu estadía y participes con respeto._`
-  } else if (m.messageStubType === 28) {
+♡ *Grupo ›* ${groupName}`
+  } else {
     title = "Un miembro ha salido 👋"
     body = "Hasta pronto..."
     text = `*✩ Despedida (✿╥﹏╥)*  
 ❑ *Nombre ›* ${name}
 ✿ *Número ›* @${user.split('@')[0]}
-♡ *Grupo ›* ${groupName}
-
-> _Lamentamos tu partida, ¡te esperamos de vuelta algún día!_`
+♡ *Grupo ›* ${groupName}`
   }
 
   await conn.sendMessage(m.chat, {
