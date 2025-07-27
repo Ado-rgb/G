@@ -38,7 +38,7 @@ let handler = async (m, { conn, args }) => {
 
     } else if (args[0]) {
       if (isUrl(args[0])) {
-        const texto1 = '✧ 𝐒𝐭𝐢𝐜𝐤𝐞𝐫𝐬 𝐁𝐘 𝐌𝐢𝐜𝐡𝐢 - 𝐈𝐀✧';
+        const texto1 = '✧ 𝐒𝐭𝐢𝐜𝐤𝐞𝐫𝐬 𝐁𝐘 𝐌𝐢𝐜𝐡𝐢 - 𝐈𝐀 ✧';
         const texto2 = await conn.getName(m.sender);
         stiker = await sticker(false, args[0], texto1, texto2);
       } else {
