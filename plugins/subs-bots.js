@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import ws from 'ws'
 
 async function handler(m, { conn: stars }) {
   const socketsDir = path.join('./Sessions/Sockets')
@@ -20,21 +19,17 @@ async function handler(m, { conn: stars }) {
 
     try {
       let creds = JSON.parse(fs.readFileSync(credsPath))
-      let jidFromFile = creds?.me?.jid || creds?.me?.id || id
-      let name = creds?.me?.name || '-'
 
-      // Limpiar el JID: quitar sufijos tipo ":43" y dejar solo el número
-      let cleanJid = jidFromFile.split(':')[0].replace(/[^0-9]/g, '')
+      // Validar que esté registrado
+      if (!creds?.registered || !creds?.me?.jid) continue
 
-      // Buscar conexión activa en memoria
-      let connObj = global.conns.find(c => {
-        if (!c?.user?.id) return false
-        let cleanConnJid = c.user.id.split(':')[0].replace(/[^0-9]/g, '')
-        return cleanConnJid === cleanJid && c.ws?.socket?.readyState !== ws.CLOSED
-      })
+      let jid = creds.me.jid.split(':')[0].replace(/[^0-9]/g, '')
+      let name = creds.me.name || '-'
 
-      if (connObj) {
-        activos.push({ jid: cleanJid, name })
+      // Revisar si existe un archivo session.lock (socket activo)
+      let lockFile = path.join(socketsDir, id, 'session.lock')
+      if (fs.existsSync(lockFile)) {
+        activos.push({ jid, name })
       }
     } catch (e) {
       console.log(`Error leyendo ${id}:`, e.message)
