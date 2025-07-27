@@ -5,7 +5,6 @@ let handler = async (m, { conn, usedPrefix }) => {
 > ꕥ *Menú de Comandos* ꕥ
 `
 
-    
     let plugins = Object.values(global.plugins)
     let tagsAgrupados = {}
 
@@ -17,7 +16,6 @@ let handler = async (m, { conn, usedPrefix }) => {
       }
     }
 
-    
     for (let tag in tagsAgrupados) {
       menu += `\n╭─❒ *${tag.toUpperCase()}*\n`
       for (let plugin of tagsAgrupados[tag]) {
@@ -31,9 +29,11 @@ let handler = async (m, { conn, usedPrefix }) => {
     await conn.sendMessage(m.chat, {
       text: menu,
       contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true,
         externalAdReply: {
           title: '✧ Menú de comandos',
-          body: '',
+          body: 'Reenviado muchas veces',
           mediaType: 1,
           renderLargerThumbnail: true,
           thumbnailUrl: 'https://files.catbox.moe/wp5z1y.jpg',
