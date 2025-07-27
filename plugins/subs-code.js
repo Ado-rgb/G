@@ -1,38 +1,38 @@
 import { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser } from '@whiskeysockets/baileys'
 import pino from 'pino'
-import qrcode from 'qrcode'
 import crypto from 'crypto'
 import fs from 'fs'
-import NodeCache from 'node-cache'
-import readline from 'readline'
-import moment from 'moment-timezone'
-import { Boom } from '@hapi/boom'
+import path from 'path'
 
 if (!global.conns) global.conns = []
-if (!globalThis.jadi) globalThis.jadi = 'Sessions/Sockets'
+if (!globalThis.jadi) globalThis.jadi = path.join('.', 'Sessions', 'Sockets')
 
 let handler = async (m, { conn: parentConn, args, usedPrefix, command }) => {
   try {
-    // Crear carpeta globalThis.jadi si no existe
-    if (!fs.existsSync(globalThis.jadi)) fs.mkdirSync(globalThis.jadi, { recursive: true })
+    // Crear carpeta Sessions/Sockets si no existe
+    if (!fs.existsSync(globalThis.jadi)) {
+      fs.mkdirSync(globalThis.jadi, { recursive: true })
+    }
 
     // Generar id random de 8 caracteres para sesión
     let authFolder = crypto.randomBytes(5).toString('hex').slice(0, 8)
 
-    // Si el usuario manda un código base64, lo guardamos como creds.json para login sin QR
+    // Si el usuario manda un código base64, guardamos creds.json para login sin QR
     if (args[0]) {
       try {
         const credsData = JSON.parse(Buffer.from(args[0], 'base64').toString('utf-8'))
-        const pathCreds = `${globalThis.jadi}/${authFolder}/creds.json`
-        if (!fs.existsSync(`${globalThis.jadi}/${authFolder}`)) fs.mkdirSync(`${globalThis.jadi}/${authFolder}`, { recursive: true })
+        const pathCreds = path.join(globalThis.jadi, authFolder, 'creds.json')
+        if (!fs.existsSync(path.join(globalThis.jadi, authFolder))) {
+          fs.mkdirSync(path.join(globalThis.jadi, authFolder), { recursive: true })
+        }
         fs.writeFileSync(pathCreds, JSON.stringify(credsData, null, 2))
       } catch (e) {
         return m.reply('❌ Código de sesión inválido o corrupto.')
       }
     }
 
-    // Cargar estado
-    const { state, saveCreds } = await useMultiFileAuthState(`${globalThis.jadi}/${authFolder}`)
+    // Cargar estado de la sesión
+    const { state, saveCreds } = await useMultiFileAuthState(path.join(globalThis.jadi, authFolder))
     const { version } = await fetchLatestBaileysVersion()
 
     // Crear socket subbot
@@ -46,14 +46,11 @@ let handler = async (m, { conn: parentConn, args, usedPrefix, command }) => {
 
     sock.ev.on('creds.update', saveCreds)
 
-    // Generar linking code (8 dígitos, formato XXXX-XXXX)
-    let phoneNumber = m.sender.split('@')[0]
-    let cleanNumber = phoneNumber.replace(/\D/g, '')
-    if (cleanNumber.length < 8) cleanNumber = cleanNumber.padStart(8, '0')
+    // Generar linking code (8 dígitos en formato XXXX-XXXX)
     const rawCode = crypto.randomBytes(4).toString('hex').toUpperCase()
     const code = rawCode.match(/.{1,4}/g).join('-')
 
-    // Mandar instrucciones y código de vinculación
+    // Enviar instrucciones y código de vinculación al chat
     await parentConn.sendMessage(m.chat, {
       text: `✿ *SubBot: Vinculación*\n\nUsa este código para vincular tu Sub-Bot con WhatsApp:\n\n*${code}*\n\nPasos:\n1. En WhatsApp: Configuración > Dispositivos vinculados\n2. Selecciona "Vincular un dispositivo"\n3. Escribe el código exacto\n\nEste código es único para tu sesión.`
     }, { quoted: m })
@@ -65,17 +62,16 @@ let handler = async (m, { conn: parentConn, args, usedPrefix, command }) => {
       if (connection === 'close') {
         const reason = lastDisconnect?.error?.output?.statusCode
         if (reason !== DisconnectReason.loggedOut) {
-          // Reintentar conexión
+          // Intentar reconectar o limpiar
           try {
             await sock.logout()
           } catch {}
           global.conns = global.conns.filter(c => c !== sock)
-          // opcional: reconectar (podés llamar al handler otra vez)
         } else {
-          // Sesión cerrada por logout
+          // Sesión cerrada, eliminar subbot
           global.conns = global.conns.filter(c => c !== sock)
-          // Borrar sesión si querés
-          // fs.rmdirSync(`${globalThis.jadi}/${authFolder}`, { recursive: true, force: true })
+          // Opcional: borrar sesión de disco
+          // fs.rmdirSync(path.join(globalThis.jadi, authFolder), { recursive: true, force: true })
         }
       }
 
