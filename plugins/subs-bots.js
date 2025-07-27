@@ -10,10 +10,9 @@ async function handler(m, { conn: stars }) {
     return await stars.sendMessage(m.chat, { text: 'No hay subbots registrados.' }, { quoted: m })
   }
 
-  let dirs = fs.readdirSync(socketsDir).filter(d => {
-    let dirPath = path.join(socketsDir, d)
-    return fs.statSync(dirPath).isDirectory()
-  })
+  let dirs = fs.readdirSync(socketsDir).filter(d =>
+    fs.statSync(path.join(socketsDir, d)).isDirectory()
+  )
 
   for (let id of dirs) {
     let credsPath = path.join(socketsDir, id, 'creds.json')
@@ -21,13 +20,21 @@ async function handler(m, { conn: stars }) {
 
     try {
       let creds = JSON.parse(fs.readFileSync(credsPath))
-      let jid = creds?.me?.id || id
+      let jidFromFile = creds?.me?.jid || creds?.me?.id || id
       let name = creds?.me?.name || '-'
 
-      // Validar si está en memoria y activo
-      let connObj = global.conns.find(c => c?.user?.id === jid || c?.user?.jid === jid)
-      if (connObj && connObj.ws?.socket && connObj.ws.socket.readyState !== ws.CLOSED) {
-        activos.push({ id, jid, name })
+      // Limpiar el JID: quitar sufijos tipo ":43" y dejar solo el número
+      let cleanJid = jidFromFile.split(':')[0].replace(/[^0-9]/g, '')
+
+      // Buscar conexión activa en memoria
+      let connObj = global.conns.find(c => {
+        if (!c?.user?.id) return false
+        let cleanConnJid = c.user.id.split(':')[0].replace(/[^0-9]/g, '')
+        return cleanConnJid === cleanJid && c.ws?.socket?.readyState !== ws.CLOSED
+      })
+
+      if (connObj) {
+        activos.push({ jid: cleanJid, name })
       }
     } catch (e) {
       console.log(`Error leyendo ${id}:`, e.message)
@@ -41,8 +48,8 @@ async function handler(m, { conn: stars }) {
   let text = activos
     .map(
       (bot, index) =>
-        `*${index + 1}.-* @${bot.jid.replace(/[^0-9]/g, '')}\n` +
-        `*Link:* https://wa.me/${bot.jid.replace(/[^0-9]/g, '')}\n` +
+        `*${index + 1}.-* @${bot.jid}\n` +
+        `*Link:* https://wa.me/${bot.jid}\n` +
         `*Nombre:* ${bot.name}`
     )
     .join('\n\n')
