@@ -55,41 +55,42 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command }) => {
 
     conn.ev.on('connection.update', async (update) => {
       const { connection } = update
+      console.log('connection.update event:', connection, 'registered?', state.creds.registered)
 
       if (connection === 'open') {
         isConnected = true
-        const finalPath = `./Sessions/Sockets/${authFolderB}`
         try {
+          const finalPath = `./Sessions/Sockets/${authFolderB}`
           fs.renameSync(authPath, finalPath)
-        } catch {}
-
+        } catch (e) {
+          console.log('Error moviendo carpeta:', e.message)
+        }
         global.conns.push(conn)
         await parent.reply(
           m.chat,
           '➪ *Conectado exitosamente con WhatsApp*\n\n*Nota:* Esto es temporal\nSi el Bot principal se reinicia o se desactiva, todos los sub bots también lo harán',
           m,
         )
-      }
 
-      // Aquí va la magia del código 8 dígitos
-      if (!state.creds.registered && connection === 'open') {
-        try {
-          const pairingCode = await conn.requestPairingCode()
-          const formattedCode = pairingCode.match(/.{1,4}/g).join('-')
+        // Si NO está registrado, manda el código
+        if (!state.creds.registered) {
+          try {
+            const pairingCode = await conn.requestPairingCode()
+            const formattedCode = pairingCode.match(/.{1,4}/g).join('-')
+            let txt = `➪ *Código para convertirte en SubBot*\n\n`
+            txt += `┌─── ✩ *Instrucciones* ✩ ───\n`
+            txt += `│ 1. En WhatsApp toca *Menú* (los 3 puntos)\n`
+            txt += `│ 2. Selecciona *Dispositivos vinculados*\n`
+            txt += `│ 3. Elige *Vincular un dispositivo*\n`
+            txt += `│ 4. Ingresa este código:\n`
+            txt += `│\n│    *${formattedCode}*\n`
+            txt += `└───────────────────────────\n\n`
+            txt += `*Nota:* Solo funciona en el número que solicitó el código.`
 
-          let txt = `➪ *Código para convertirte en SubBot*\n\n`
-          txt += `┌─── ✩ *Instrucciones* ✩ ───\n`
-          txt += `│ 1. En WhatsApp toca *Menú* (los 3 puntos)\n`
-          txt += `│ 2. Selecciona *Dispositivos vinculados*\n`
-          txt += `│ 3. Elige *Vincular un dispositivo*\n`
-          txt += `│ 4. Ingresa este código:\n`
-          txt += `│\n│    *${formattedCode}*\n`
-          txt += `└───────────────────────────\n\n`
-          txt += `*Nota:* Solo funciona en el número que solicitó el código.`
-
-          await parent.reply(m.chat, txt, m)
-        } catch (e) {
-          // si no funciona, ignora
+            await parent.reply(m.chat, txt, m)
+          } catch (e) {
+            console.log('Error al pedir pairing code:', e.message)
+          }
         }
       }
 
@@ -99,6 +100,8 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command }) => {
         } catch {}
       }
     })
+
+    conn.ev.on('creds.update', saveCreds)
   }
 
   serbot()
