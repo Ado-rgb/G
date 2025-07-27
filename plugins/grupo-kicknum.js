@@ -1,36 +1,37 @@
 let handler = async (m, { conn, args }) => {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos')
 
-  if (!args[0]) return m.reply('✿ *Uso correcto ›* .kicknum +212123456789 o .kicknum 212123456789')
+  if (!args[0]) return m.reply('✿ *Uso correcto ›* .kicknum +212 o .kicknum 212')
 
-  let input = args[0].replace(/\s+/g, '') // quita espacios por si acaso
+  let prefix = args[0].replace(/\D/g, '') // solo números del prefijo
 
-  // Regex para detectar código de país al inicio (+212 o 212)
-  const codeCountryRegex = /^\+?\d{1,3}/
-  let codeMatch = input.match(codeCountryRegex)
-  if (!codeMatch) return m.reply('❌ Debes poner un número con código de país, ejemplo +212123456789 o 212123456789')
-
-  let codeCountry = codeMatch[0].replace('+', '')
-  let number = input.replace(/^(\+?\d{1,3})/, '') // quita el código del número
-
-  if (!number) return m.reply('❌ Número inválido después del código de país.')
-
-  let user = codeCountry + number + '@s.whatsapp.net'
+  if (!prefix) return m.reply('❌ Debes poner un código de país válido, ejemplo 212')
 
   try {
-    await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
-    await conn.sendMessage(m.chat, { 
-      text: `✿ *KickNum:* Usuario +${codeCountry}${number}`,
-      mentions: [user]
-    })
-  } catch {
-    m.reply('❌ No pude expulsar al usuario (quizás no soy admin o pasó otro error)')
+    let metadata = await conn.groupMetadata(m.chat)
+    let participants = metadata.participants.map(p => p.id)
+    let toKick = participants.filter(user => user.startsWith(prefix))
+
+    if (toKick.length === 0) return m.reply(`✿ No encontré usuarios con el prefijo +${prefix} en el grupo.`)
+
+    for (let user of toKick) {
+      try {
+        await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
+      } catch {}
+    }
+
+    let list = toKick.map(u => `@${u.split('@')[0]}`).join('\n')
+    m.reply(`✿ Expulsé a los siguientes usuarios con prefijo +${prefix}:\n${list}`, m, { mentions: toKick })
+
+  } catch (e) {
+    console.error(e)
+    m.reply('❌ Error al intentar expulsar usuarios.')
   }
 }
 
 handler.command = ['kicknum']
 handler.help = ['kicknum']
-handler.tags = ['grupos']
+handler.tags = ['grupo']
 handler.admin = true
 
 export default handler
