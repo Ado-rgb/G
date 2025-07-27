@@ -38,12 +38,12 @@ handler.before = async function (m, { conn }) {
   }
 
   await conn.sendMessage(m.chat, {
-    text: text,
+    text,
     contextInfo: {
       mentionedJid: [user],
       externalAdReply: {
-        title: title,
-        body: body,
+        title,
+        body,
         thumbnailUrl: pp,
         sourceUrl: "https://myapiadonix.vercel.app",
         mediaType: 1,
