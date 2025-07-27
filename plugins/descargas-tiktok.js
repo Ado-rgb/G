@@ -21,7 +21,7 @@ Ejemplo:
 
     let info = data.result
 
-    // Caption decorado tipo SerieInfo
+    
     let caption = `
 *✩ TikTokInfo (✿❛◡❛)*
 *❑ Título ›* ${info.title}
@@ -36,7 +36,7 @@ Ejemplo:
 › ☁︎ Vistas › ${info.views?.toLocaleString() || 0}
 `.trim()
 
-    // Enviar video con contexto bonito
+    
     await conn.sendMessage(m.chat, {
       video: { url: info.video },
       caption,
@@ -54,7 +54,7 @@ Ejemplo:
       }
     }, { quoted: m })
 
-    // Reaccionar OK
+    
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (err) {
