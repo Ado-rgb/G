@@ -1,5 +1,5 @@
 // Ensure TLS certificate rejection is enabled for security.
-Process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1';
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1';
 
 import './settings.js'; // Assuming this file sets global variables like 'sessions', 'jadi', 'botNumber'
 import { setupMaster, fork } from 'cluster'; // Not used in this particular script
