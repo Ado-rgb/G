@@ -53,16 +53,16 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command }) => {
 
     const conn = makeWASocket(connectionOptions)
 
-    async function connectionUpdate(update) {
+    conn.ev.on('connection.update', async (update) => {
       const { connection } = update
+
       if (connection === 'open') {
         isConnected = true
         const finalPath = `./Sessions/Sockets/${authFolderB}`
         try {
           fs.renameSync(authPath, finalPath)
-        } catch (e) {
-          // Si la carpeta ya existe o error, solo ignora y sigue
-        }
+        } catch {}
+
         global.conns.push(conn)
         await parent.reply(
           m.chat,
@@ -71,16 +71,34 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command }) => {
         )
       }
 
+      // Aquí va la magia del código 8 dígitos
+      if (!state.creds.registered && connection === 'open') {
+        try {
+          const pairingCode = await conn.requestPairingCode()
+          const formattedCode = pairingCode.match(/.{1,4}/g).join('-')
+
+          let txt = `➪ *Código para convertirte en SubBot*\n\n`
+          txt += `┌─── ✩ *Instrucciones* ✩ ───\n`
+          txt += `│ 1. En WhatsApp toca *Menú* (los 3 puntos)\n`
+          txt += `│ 2. Selecciona *Dispositivos vinculados*\n`
+          txt += `│ 3. Elige *Vincular un dispositivo*\n`
+          txt += `│ 4. Ingresa este código:\n`
+          txt += `│\n│    *${formattedCode}*\n`
+          txt += `└───────────────────────────\n\n`
+          txt += `*Nota:* Solo funciona en el número que solicitó el código.`
+
+          await parent.reply(m.chat, txt, m)
+        } catch (e) {
+          // si no funciona, ignora
+        }
+      }
+
       if (connection === 'close' && !isConnected) {
-        // No conectó, limpia carpeta temporal
         try {
           fs.rmSync(authPath, { recursive: true, force: true })
         } catch {}
       }
-    }
-
-    conn.connectionUpdate = connectionUpdate
-    conn.ev.on('connection.update', connectionUpdate)
+    })
   }
 
   serbot()
