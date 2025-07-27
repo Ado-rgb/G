@@ -8,7 +8,7 @@
 ---
 
 > [!IMPORTANTE]
-> **Este proyecto está en constante evolución, poco a poco se le irán agregando más cosas.
+> Este proyecto está en constante evolución, poco a poco se le irán agregando más cosas.
 
 ----
 
