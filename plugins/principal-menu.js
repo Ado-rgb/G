@@ -1,6 +1,6 @@
 let handler = async (m, { conn, usedPrefix }) => {
   try {
-    let menu = `*¡Hola! Soy ${conn.user.name}*
+    let menu = `*¡Hola! Soy ${globalThis.botname}*
 
 > ꕥ *Menú de Comandos* ꕥ
 `
@@ -36,7 +36,7 @@ let handler = async (m, { conn, usedPrefix }) => {
           body: 'Selecciona un comando',
           mediaType: 1,
           renderLargerThumbnail: true,
-          thumbnailUrl: 'https://i.imgur.com/NZpG9Rk.jpg',
+          thumbnailUrl: 'https://files.catbox.moe/wp5z1y.jpg',
           sourceUrl: 'https://youtube.com'
         }
       }
