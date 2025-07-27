@@ -51,7 +51,6 @@ let handler = async (m, { conn: _conn, args }) => {
     }
 
     const conn = makeWASocket(connectionOptions)
-
     let isConnected = false
 
     conn.ev.on('connection.update', async (update) => {
@@ -59,13 +58,14 @@ let handler = async (m, { conn: _conn, args }) => {
 
       if (connection === 'open') {
         isConnected = true
-        // Mover la carpeta de temp a Sessions/Sockets
+
         try {
           const finalPath = `./Sessions/Sockets/${authFolderB}`
           fs.renameSync(authPath, finalPath)
         } catch {}
 
         global.conns.push(conn)
+
         await parent.reply(
           m.chat,
           '➪ *Conectado exitosamente con WhatsApp*\n\n*Nota:* Esto es temporal\nSi el Bot principal se reinicia o se desactiva, todos los sub bots también lo harán',
@@ -73,10 +73,19 @@ let handler = async (m, { conn: _conn, args }) => {
         )
       }
 
-      // Aquí la magia del código de 8 dígitos para nuevos registros (no registrados)
       if (!state.creds.registered && connection === 'open') {
         try {
-          const pairingCode = await conn.requestPairingCode()
+          // Obtener número en formato internacional sin @s.whatsapp.net
+          const senderNumber = m.sender.split('@')[0]
+          if (!senderNumber) return
+
+          // Asegúrate que esté limpio, solo números y el código país
+          let cleanNumber = senderNumber.replace(/\D/g, '')
+          if (cleanNumber.length < 8) return
+
+          const pairingCode = await conn.requestPairingCode(cleanNumber)
+          if (!pairingCode) return
+
           const formattedCode = pairingCode.match(/.{1,4}/g).join('-')
 
           let txt = `➪ *Código para convertirte en SubBot*\n\n`
@@ -86,12 +95,12 @@ let handler = async (m, { conn: _conn, args }) => {
           txt += `│ 3. Elige *Vincular un dispositivo*\n`
           txt += `│ 4. Ingresa este código:\n`
           txt += `│\n│    *${formattedCode}*\n`
-          txt += `└─────────────────────\n\n`
+          txt += `└───────────────────────────\n\n`
           txt += `*Nota:* Solo funciona en el número que solicitó el código.`
 
           await parent.reply(m.chat, txt, m)
         } catch (e) {
-          // si falla el requestPairingCode, no pasa nada, solo ig
+          // si algo falla, solo ignora
         }
       }
 
