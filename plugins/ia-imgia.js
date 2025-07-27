@@ -3,15 +3,18 @@ import fetch from 'node-fetch'
 let handler = async (m, { conn, args, usedPrefix, command }) => {
   const prompt = args.join(' ')
   if (!prompt) return m.reply(
-`✿ Sigue las instrucciones :
-✎ *Uso correcto ›* ${usedPrefix + command} < texto para la imagen >
-✎ *Ejemplo ›* ${usedPrefix + command} gatito
+`✿ *Generador de Imágenes AI*
+
+Sigue las instrucciones:
+✎ *Uso correcto ›* ${usedPrefix + command} <texto para la imagen>
+✎ *Ejemplo ›* ${usedPrefix + command} gatito kawaii con fondo rosa
 
 Recuerda que la imagen puede tardar unos segundos en generarse.
 ↺ Sé paciente mientras se crea tu imagen.`)
 
   try {
-    await m.react('🕒')
+    
+    await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
     const api = `https://myapiadonix.vercel.app/api/IAimagen?prompt=${encodeURIComponent(prompt)}`
     const res = await fetch(api)
@@ -23,24 +26,26 @@ Recuerda que la imagen puede tardar unos segundos en generarse.
     await conn.sendMessage(m.chat, {
       image: { url: json.result.image },
       caption: `
-» *Imagen Generada*
+✿ *¡Imagen Generada!*
 
-> _Detalles :_
+Detalles:
 ✎ *Prompt ›* ${prompt}
-↺ Disfruta.`.trim()
+↺ Disfruta tu nueva creación.
+`.trim()
     }, { quoted: m })
 
-    await m.react('✅')
+    // Reaccionar con check
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (e) {
     console.error('Error generando imagen:', e)
-    await m.react('✖️')
+    await conn.sendMessage(m.chat, { react: { text: '✖️', key: m.key } })
     m.reply('✿ *Error ›* No se pudo generar la imagen, inténtalo más tarde.')
   }
 }
 
 handler.command = ['imgia']
-handler.help = ['imgia', 'iaimg']
+handler.help = ['imgia <texto>']
 handler.tags = ['ia']
 
 export default handler
