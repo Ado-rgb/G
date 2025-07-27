@@ -34,11 +34,9 @@ let handler = async (m, { conn, args, command, usedPrefix }) => {
     let { title, thumbnail, quality, download } = json.data
 
     // Mensaje con detalles decorados
-    let details = `
-ꕥ Nombre › *${title}*
+    let details = `› *${title}*
 ⚥ Calidad › *${quality}*
 ⛁ Tipo › *${isAudio ? 'Audio' : 'Video'}*
-♡ Estado › *Listo para ti 🤍🍀*
 ❒ Fuente › *YouTube*
     `.trim()
 
@@ -61,7 +59,8 @@ let handler = async (m, { conn, args, command, usedPrefix }) => {
       await conn.sendMessage(m.chat, { 
         audio: { url: download }, 
         mimetype: 'audio/mpeg',
-        fileName: `${title}.mp3`
+        fileName: `${title}.mp3`,
+        ptt: true
       }, { quoted: m })
     } else {
       await conn.sendMessage(m.chat, { 
