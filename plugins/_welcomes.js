@@ -3,7 +3,7 @@ let handler = m => m
 handler.before = async function (m, { conn }) {
   if (!m.isGroup) return
   let chat = global.db.data.chats[m.chat]
-  if (!chat.welcome) return
+  if (!chat || !chat.welcome) return
 
   if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
 
