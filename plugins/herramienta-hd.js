@@ -1,8 +1,9 @@
 import fetch from 'node-fetch'
 
-let handler = async (m, { conn, args, usedPrefix, command, mime, quoted, Format }) => {
-  if (!(/image|webp/.test(mime) || m.mtype === 'imageMessage' || m.mtype === 'stickerMessage'))
+let handler = async (m, { conn, mime, quoted, usedPrefix, command, Format }) => {
+  if (!quoted || !(/image|webp/.test(mime) || (quoted.mtype === 'imageMessage' || quoted.mtype === 'stickerMessage'))) {
     return m.reply(`⚠️ Responde o envía una imagen con el comando *${usedPrefix + command}* para mejorarla.`)
+  }
 
   try {
     await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
