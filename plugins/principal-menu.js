@@ -4,7 +4,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     const numeroPrincipal = '50493059810@s.whatsapp.net'
     const esBotPrincipal = conn.user?.id?.split(':')[0] === numeroPrincipal.split('@')[0]
 
-    let tipoBot = esBotPrincipal ? 'Bot Principal' : 'Subbot'
+    let tipoBot = esBotPrincipal ? 'Principal' : 'Subbot'
 
     let menu = `*¡Hola! Soy ${globalThis.botname}*
 
