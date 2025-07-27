@@ -1,3 +1,4 @@
+// github.com/Ado-rgb
 import fetch from 'node-fetch'
 import yts from 'yt-search'
 
