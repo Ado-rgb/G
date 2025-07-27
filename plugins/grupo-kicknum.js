@@ -21,7 +21,7 @@ let handler = async (m, { conn, args }) => {
     }
 
     let list = toKick.map(u => `@${u.split('@')[0]}`).join('\n')
-    m.reply(`✿ Expulsé a los siguientes usuarios con prefijo +${prefix}:\n${list}`, m, { mentions: toKick })
+    m.reply(`✿ Expulsé a los siguientes usuarios con prefijo +${prefix}:\n${list}`, null, { mentions: toKick })
 
   } catch (e) {
     console.error(e)
