@@ -16,11 +16,16 @@ let handler = async (m, { conn, text }) => {
     })
 
     let json = await res.json()
-    if (json.status !== 'success') throw json
+    if (json.status !== 'success') throw new Error(JSON.stringify(json))
 
-    let videoUrl = json.data.result_url || json.data.url || json.result
+    let videoUrl = json.data.download_url
+    let title = json.data.title
 
-    await conn.sendMessage(m.chat, { video: { url: videoUrl }, caption: '🎬 *Aquí está tu video*' }, { quoted: m })
+    await conn.sendMessage(m.chat, { 
+      video: { url: videoUrl }, 
+      caption: `🎬 *${title}*\n\nVideo descargado con éxito.` 
+    }, { quoted: m })
+
     await m.react('✅')
   } catch (e) {
     console.error(e)
@@ -28,8 +33,8 @@ let handler = async (m, { conn, text }) => {
   }
 }
 
-handler.help = ['ytmp4']
-handler.tags = ['descargas']
+handler.help = ['ytmp4 <link>']
+handler.tags = ['downloader']
 handler.command = /^ytmp4$/i
 
 export default handler
