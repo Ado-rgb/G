@@ -1,35 +1,42 @@
-let handler = async (m, { conn, args }) => {
-  if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos')
-  if (!args[0]) return m.reply(
-`✿ Uso: ${m.prefix}welcome <on|off>
-Ejemplo: ${m.prefix}welcome on`
-  )
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  if (!m.isGroup) return m.reply('✿ Este comando solo funciona en grupos')
 
-  let chat = globalThis.db.data.chats[m.chat]
-  let option = args[0].toLowerCase()
+  let chat = global.db.data.chats[m.chat]
+  if (args.length < 1) {
+    return m.reply(
+`✿ *Uso correcto ›* ${usedPrefix + command} on/off
 
-  if (!['on', 'off'].includes(option)) return m.reply('✿ Opción inválida, usa "on" o "off"')
+> Activa o desactiva la bienvenida y despedida.`
+    )
+  }
 
-  chat.welcome = option === 'on'
-  m.reply(`✿ Welcome está ahora *${option === 'on' ? 'activado ✨' : 'desactivado ❌'}* en este grupo`)
+  if (args[0].toLowerCase() === 'on') {
+    chat.welcome = true
+    m.reply('✿ *Welcome activado* en este grupo ✨')
+  } else if (args[0].toLowerCase() === 'off') {
+    chat.welcome = false
+    m.reply('✿ *Welcome desactivado* ❌')
+  } else {
+    m.reply(`✿ Opción no válida, usa: ${usedPrefix + command} on/off`)
+  }
 }
 
 handler.command = ['welcome']
-handler.tags = ['group', 'config']
-handler.help = ['welcome <on|off>']
-handler.group = true
+handler.help = ['welcome on/off']
+handler.tags = ['group']
 
-handler.before = async function (m, { conn }) {
+export default handler
+
+// --- Listener de bienvenida y despedida ---
+export async function before(m, { conn }) {
   if (!m.isGroup) return
-  let chat = globalThis.db.data.chats[m.chat]
-  if (!chat?.welcome) return
+  let chat = global.db.data.chats[m.chat]
+  if (!chat.welcome) return
+
   if (!m.messageStubType || ![27, 28].includes(m.messageStubType)) return
 
   let user = m.messageStubParameters[0]
-  if (!user) return
-
   let name = await conn.getName(user).catch(() => user.split('@')[0])
-  let number = user.split('@')[0].replace(/[^0-9]/g, '')
   let pp = await conn.profilePictureUrl(user, 'image').catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png')
   let groupName = await conn.getName(m.chat)
 
@@ -42,7 +49,7 @@ handler.before = async function (m, { conn }) {
     body = "¡Nos alegra que estés aquí!"
     text = `*✩ Bienvenido/a (✿❛◡❛)!*  
 ❑ *Nombre ›* ${name}
-✿ *Número ›* @${number}
+✿ *Número ›* @${user.split('@')[0]}
 ♡ *Grupo ›* ${groupName}
 
 > _Esperamos que disfrutes tu estadía y participes con respeto._`
@@ -51,7 +58,7 @@ handler.before = async function (m, { conn }) {
     body = "Hasta pronto..."
     text = `*✩ Despedida (✿╥﹏╥)*  
 ❑ *Nombre ›* ${name}
-✿ *Número ›* @${number}
+✿ *Número ›* @${user.split('@')[0]}
 ♡ *Grupo ›* ${groupName}
 
 > _Lamentamos tu partida, ¡te esperamos de vuelta algún día!_`
@@ -72,5 +79,3 @@ handler.before = async function (m, { conn }) {
     }
   })
 }
-
-export default handler
