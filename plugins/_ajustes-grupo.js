@@ -39,5 +39,5 @@ Ejemplo:
 handler.command = ['on', 'off']
 handler.help = ['on <función>', 'off <función>']
 handler.tags = ['config']
-
+handler.admin = true 
 export default handler
