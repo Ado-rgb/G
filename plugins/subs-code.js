@@ -1,4 +1,11 @@
-import { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser } from '@whiskeysockets/baileys'
+import { 
+  makeWASocket, 
+  useMultiFileAuthState, 
+  DisconnectReason, 
+  fetchLatestBaileysVersion, 
+  makeCacheableSignalKeyStore, 
+  jidNormalizedUser 
+} from '@whiskeysockets/baileys'
 import pino from 'pino'
 import crypto from 'crypto'
 import fs from 'fs'
