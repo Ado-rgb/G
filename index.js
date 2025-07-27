@@ -194,6 +194,8 @@ globalThis.conn = makeWASocket(connectionOptions); // Initialize main Baileys co
 
 // --- Sub-bot management ---
 globalThis.conns = {}; // Object to store active sub-bot connections
+// To keep track of the last connection attempt time for each sub-bot session
+globalThis.lastSubBotConnectionAttempt = {};
 
 /**
  * Creates and manages a sub-bot connection.
@@ -206,6 +208,9 @@ async function createSubBotConnection(sessionId) {
         console.warn(chalk.yellow(`Sub-bot session directory not found: ${sessionPath}. Skipping.`));
         return;
     }
+
+    // Update the last attempt time
+    globalThis.lastSubBotConnectionAttempt[sessionId] = Date.now();
 
     const { state: subBotState, saveState: saveSubBotState, saveCreds: saveSubBotCreds } = await useMultiFileAuthState(sessionPath);
 
@@ -276,9 +281,8 @@ async function createSubBotConnection(sessionId) {
                 console.log(chalk.bold.redBright(`\n🍀 Sub-bot [${sessionId}] desconectado permanentemente. Borrando credenciales.`));
                 rmSync(sessionPath, { recursive: true, force: true }); // Delete session folder
             } else {
-                console.log(chalk.bold.yellowBright(`\n🔄 Intentando reconectar Sub-bot [${sessionId}]...`));
-                // Attempt to reconnect by re-creating the connection
-                setTimeout(() => createSubBotConnection(sessionId), 3000); // Retry after 3 seconds
+                // Do not immediately reconnect here; rely on the setInterval for scheduled reconnections
+                console.log(chalk.bold.yellowBright(`\n🔄 Sub-bot [${sessionId}] se intentará reconectar en el próximo ciclo.`));
             }
         }
     });
@@ -304,12 +308,26 @@ async function startSubBots() {
     });
 
     for (const sessionId of sessionIds) {
-        await createSubBotConnection(sessionId);
+        // Only attempt connection if not already connected or if enough time has passed since last attempt
+        if (!globalThis.conns[sessionId] && (Date.now() - (globalThis.lastSubBotConnectionAttempt[sessionId] || 0) > 4 * 60 * 1000)) {
+            await createSubBotConnection(sessionId);
+        } else if (globalThis.conns[sessionId]) {
+            console.log(chalk.gray(`Sub-bot [${sessionId}] ya está conectado o está en proceso.`));
+        } else {
+            console.log(chalk.gray(`Esperando para intentar conectar sub-bot [${sessionId}] (próximo intento en ${Math.ceil((4 * 60 * 1000 - (Date.now() - (globalThis.lastSubBotConnectionAttempt[sessionId] || 0))) / 1000)} segundos).`));
+        }
     }
 }
 
 // Call startSubBots after the main bot connection setup
 startSubBots().catch(console.error);
+
+// Set an interval to attempt connecting/reconnecting sub-bots every 4 minutes
+setInterval(() => {
+    console.log(chalk.magentaBright('\n[SUB-BOTS] Reintentando conectar sub-bots desconectados...'));
+    startSubBots().catch(console.error);
+}, 4 * 60 * 1000); // Every 4 minutes (4 * 60 * 1000 milliseconds)
+
 
 // --- Main bot pairing code / QR logic ---
 if (!fs.existsSync(`./${globalThis.sessions}/creds.json`)) {
@@ -512,6 +530,9 @@ async function filesInit() {
             delete globalThis.plugins[filename]; // Remove if loading fails
         }
     }
+    // Also re-attempt connection for sub-bots after plugins are loaded, if any were configured via plugins
+    // This is a safety net in case initial `startSubBots` was too early
+    startSubBots().catch(console.error);
 }
 filesInit().then((_) => Object.keys(globalThis.plugins)).catch(console.error);
 
