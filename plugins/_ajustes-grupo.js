@@ -4,17 +4,17 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
 Funciones disponibles:
 > antilink
-> detect
 > alerts
 > antiarabe
+> welcome
 
 Ejemplo:
-> ${usedPrefix}on antilink
-> ${usedPrefix}off antiarabe`)
+> ${usedPrefix}on welcome
+> ${usedPrefix}off welcome`)
 
   let chat = global.db.data.chats[m.chat]
   let option = args[0].toLowerCase()
-  let valid = ['antilink', 'detect', 'alerts', 'antiarabe']
+  let valid = ['antilink', 'detect', 'alerts', 'antiarabe', 'welcome']
 
   if (!valid.includes(option)) return m.reply(
 `✿ *Función no válida ›* ${option}
