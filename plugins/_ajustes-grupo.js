@@ -8,7 +8,6 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
 Funciones disponibles:
 > antilink
-> detect
 > alerts
 > antiarabe
 > welcome
