@@ -1,10 +1,19 @@
 import fetch from 'node-fetch'
+import yts from 'yt-search'
 
 let handler = async (m, { conn, args, command, usedPrefix }) => {
   if (!args[0]) return m.reply(`*ꕥ Uso correcto ›* ${usedPrefix + command} <enlace o nombre>`)
 
   try {
     let url = args[0]
+
+    // Si no es un enlace de YouTube, buscar por nombre
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      let search = await yts(args.join(' '))
+      if (!search.videos || search.videos.length === 0) return m.reply('*ꕥ No encontré resultados*')
+      url = search.videos[0].url
+    }
+
     let apiUrl = ''
     let isAudio = false
 
@@ -68,7 +77,7 @@ let handler = async (m, { conn, args, command, usedPrefix }) => {
   }
 }
 
-handler.help = ['play', 'ytmp3', 'play2', 'ytmp4'].map(v => v + ' <url>')
+handler.help = ['play', 'ytmp3', 'play2', 'ytmp4'].map(v => v + ' <url|nombre>')
 handler.tags = ['descargas']
 handler.command = ['play', 'ytmp3', 'play2', 'ytmp4']
 
