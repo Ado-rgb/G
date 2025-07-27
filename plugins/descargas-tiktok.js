@@ -65,7 +65,7 @@ Ejemplo:
 }
 
 handler.command = ['tiktok', 'tt']
-handler.help = ['tiktok <link>']
+handler.help = ['tiktok']
 handler.tags = ['descargas']
 
 export default handler
