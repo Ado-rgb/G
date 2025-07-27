@@ -1,41 +1,27 @@
-let handler = async (m, { conn, usedPrefix, command }) => {
-  // Verificamos que sea chat privado
-  if (m.isGroup) return m.reply('✿ Este comando solo funciona en privado')
-
-  let jid = m.sender // número del usuario que envió el mensaje
-
+let handler = async (m, { conn }) => {
   try {
-    await conn.query({
-      tag: 'iq',
-      attrs: {
-        to: jid,
-        type: 'set',
-        xmlns: 'jabber:iq:call'
-      },
-      content: [{
-        tag: 'call',
-        attrs: {
-          type: 'offer'
-        },
-        content: [{
-          tag: 'offer',
-          attrs: {
-            'call-id': Date.now().toString(),
-            'sdp': 'v=0\r\n' // Oferta básica
-          }
-        }]
-      }]
+    const jid = m.chat // usuario que envió el mensaje
+    const callId = Date.now().toString()
+
+    await conn.sendMessage(jid, {
+      call: {
+        callId: callId,
+        offer: {
+          'sdp': 'fake_sdp_data',
+          'type': 'offer'
+        }
+      }
     })
-    m.reply(`📞 Llamando a ${jid.split('@')[0]}...`)
-  } catch (err) {
-    console.error(err)
-    m.reply('❌ *Error:* No se pudo realizar la llamada')
+
+    m.reply('📞 *Fake Call enviada* (esto no es una llamada real, solo simulación)')
+  } catch (e) {
+    console.log(e)
+    m.reply('❌ Error al enviar la fake call')
   }
 }
 
+handler.command = ['ll']
 handler.help = ['ll']
-handler.tags = ['owner']
-handler.command = /^ll$/i
-handler.owner = true
+handler.tags = ['fun']
 
 export default handler
