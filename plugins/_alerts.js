@@ -14,9 +14,7 @@ handler.before = async function (m, { conn, participants, groupMetadata }) {
     29: `*✩ Cambio de Rango (✿❛◡❛)*\n❑ *Usuario ›* @${userss.split('@')[0]}\n✿ *Acción ›* Promovido a *Administrador*\n♡ *Por ›* @${m.sender.split('@')[0]}`,
     30: `*✩ Cambio de Rango (✿❛◡❛)*\n❑ *Usuario ›* @${userss.split('@')[0]}\n✿ *Acción ›* Degradado de *Administrador*\n♡ *Por ›* @${m.sender.split('@')[0]}`,
     21: `*✩ Grupo Actualizado (✿❛◡❛)*\n❑ *Acción ›* Foto del grupo cambiada\n♡ *Por ›* @${m.sender.split('@')[0]}`,
-    22: `*✩ Grupo Actualizado (✿❛◡❛)*\n❑ *Acción ›* Nombre del grupo cambiado\n♡ *Por ›* @${m.sender.split('@')[0]}`,
-    27: `*✩ Cambio en Miembros (✿❛◡❛)*\n❑ *Usuario añadido ›* @${userss.split('@')[0]}\n♡ *Por ›* @${m.sender.split('@')[0]}`,
-    28: `*✩ Cambio en Miembros (✿❛◡❛)*\n❑ *Usuario eliminado ›* @${userss.split('@')[0]}\n♡ *Por ›* @${m.sender.split('@')[0]}`
+    22: `*✩ Grupo Actualizado (✿❛◡❛)*\n❑ *Acción ›* Nombre del grupo cambiado\n♡ *Por ›* @${m.sender.split('@')[0]}`
   }
 
   if (chat.detect && m.messageStubType == 2) {
