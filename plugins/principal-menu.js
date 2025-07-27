@@ -5,7 +5,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 > ꕥ *Menú de Comandos* ꕥ
 `
 
-    // Agrupar comandos por tag automáticamente
+    
     let plugins = Object.values(global.plugins)
     let tagsAgrupados = {}
 
