@@ -44,8 +44,8 @@ let handler = async (m, { conn, args, command, usedPrefix }) => {
       text: details, 
       contextInfo: { 
         externalAdReply: { 
-          title: title, 
-          body: 'Descarga lista',
+          title: 'Michi - IA', 
+          body: '',
           thumbnailUrl: thumbnail,
           sourceUrl: url,
           mediaType: 1,
