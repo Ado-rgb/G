@@ -33,7 +33,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         isForwarded: true,
         externalAdReply: {
           title: '✧ Menú de comandos',
-          body: 'Reenviado muchas veces',
+          body: '🔥 Bot desde cero..',
           mediaType: 1,
           renderLargerThumbnail: true,
           thumbnailUrl: 'https://files.catbox.moe/wp5z1y.jpg',
