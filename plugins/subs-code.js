@@ -90,8 +90,8 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
                 txt += `│  ✩  *3* : Selecciona *Vincular con el número de teléfono*\n`
                 txt += `└  ✩  *4* : Escriba el Codigo\n\n`
                 txt += `*Nota:* Este Código solo funciona en el número que lo solicito`
-                await parent.reply(m.chat, txt, m, rcanal)
-                await parent.reply(m.chat, codeBot, m, rcanal)
+                await parent.reply(m.chat, txt, m)
+                await parent.reply(m.chat, codeBot, m)
                 rl.close()
             }, 3000)
         }
@@ -123,7 +123,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => 
                 await sleep(5000)
                 if (args[0]) return
 
-                await parent.reply(conn.user.jid, `La siguiente vez que se conecte envía el siguiente mensaje para iniciar sesión sin utilizar otro código `, m, rcanal)
+                await parent.reply(conn.user.jid, `La siguiente vez que se conecte envía el siguiente mensaje para iniciar sesión sin utilizar otro código `, m)
 
                 await parent.sendMessage(conn.user.jid, { text: usedPrefix + command + " " + Buffer.from(fs.readFileSync("./Sessions/Sockets/" + authFolderB + "/creds.json"), "utf-8").toString("base64") }, { quoted: m })
             }
