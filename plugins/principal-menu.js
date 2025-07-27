@@ -17,7 +17,7 @@ let handler = async (m, { conn, usedPrefix }) => {
       }
     }
 
-    // Construir menú
+    
     for (let tag in tagsAgrupados) {
       menu += `\n╭─❒ *${tag.toUpperCase()}*\n`
       for (let plugin of tagsAgrupados[tag]) {
@@ -32,12 +32,12 @@ let handler = async (m, { conn, usedPrefix }) => {
       text: menu,
       contextInfo: {
         externalAdReply: {
-          title: 'Menú de comandos',
-          body: 'Selecciona un comando',
+          title: '✧ Menú de comandos',
+          body: '',
           mediaType: 1,
           renderLargerThumbnail: true,
           thumbnailUrl: 'https://files.catbox.moe/wp5z1y.jpg',
-          sourceUrl: 'https://youtube.com'
+          sourceUrl: 'https://myapiadonix.vercel.app'
         }
       }
     }, { quoted: m })
@@ -45,11 +45,9 @@ let handler = async (m, { conn, usedPrefix }) => {
   } catch (e) {
     console.error(e)
     m.reply('Error al generar el menú')
-  }
+ }
 }
 
-handler.help = ['menu']
-handler.tags = ['main']
 handler.command = ['menu', 'help', 'ayuda']
 
 export default handler
