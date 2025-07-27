@@ -42,6 +42,5 @@ Recuerda que la imagen puede tardar unos segundos en generarse.
 handler.command = ['imgia']
 handler.help = ['imgia', 'iaimg']
 handler.tags = ['ia']
-handler.register = true
 
 export default handler
