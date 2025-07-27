@@ -16,7 +16,7 @@ Ejemplo:
 > ${usedPrefix}off welcome`
   )
 
-  let chat = global.db.data.chats[m.chat]
+  let chat = global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {}
   let option = args[0].toLowerCase()
   let valid = ['antilink', 'detect', 'alerts', 'antiarabe', 'welcome']
 
