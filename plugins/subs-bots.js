@@ -22,5 +22,5 @@ async function handler(m, { conn: stars, usedPrefix }) {
 
 handler.command = ['listjadibot', 'bots']
 handler.help = ['bots']
-handler.tags = ['serbot']
+handler.tags = ['subbots']
 export default handler
