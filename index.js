@@ -168,6 +168,97 @@ maxIdleTimeMs: 60000,
 
 globalThis.conn = makeWASocket(connectionOptions);
 
+// --- Sub-bot management ---
+globalThis.conns = {}; // To store active sub-bot connections
+
+async function createSubBotConnection(sessionId) {
+    const sessionPath = join(__dirname, 'Sessions', 'Sockets', sessionId);
+    if (!existsSync(sessionPath)) {
+        console.warn(chalk.yellow(`Sub-bot session directory not found: ${sessionPath}. Skipping.`));
+        return;
+    }
+
+    const { state: subBotState, saveState: saveSubBotState, saveCreds: saveSubBotCreds } = await useMultiFileAuthState(sessionPath);
+
+    const subBotConnectionOptions = {
+        logger: pino({ level: 'silent' }),
+        printQRInTerminal: false, // Sub-bots won't print QR in terminal
+        mobile: MethodMobile,
+        browser: Browsers.macOS("SubBot"), // Differentiate browser type for sub-bots
+        auth: {
+            creds: subBotState.creds,
+            keys: makeCacheableSignalKeyStore(subBotState.keys, Pino({ level: "fatal" }).child({ level: "fatal" })),
+        },
+        markOnlineOnConnect: false,
+        generateHighQualityLinkPreview: true,
+        syncFullHistory: false,
+        getMessage: async (key) => {
+            try {
+                let jid = jidNormalizedUser(key.remoteJid);
+                let msg = await store.loadMessage(jid, key.id);
+                return msg?.message || "";
+            } catch (error) {
+                return "";
+            }
+        },
+        msgRetryCounterCache: new NodeCache({ stdTTL: 0, checkperiod: 0 }),
+        userDevicesCache: new NodeCache({ stdTTL: 0, checkperiod: 0 }),
+        defaultQueryTimeoutMs: undefined,
+        cachedGroupMetadata: (jid) => globalThis.conn.chats[jid] ?? {}, // Can share main bot's cache or have its own
+        version: version,
+        keepAliveIntervalMs: 55000,
+        maxIdleTimeMs: 60000,
+    };
+
+    const subBotConn = makeWASocket(subBotConnectionOptions);
+    globalThis.conns[sessionId] = subBotConn; // Add to global conns
+
+    subBotConn.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect, isNewLogin } = update;
+        if (connection === 'open') {
+            const userJid = jidNormalizedUser(subBotConn.user.id);
+            const userName = subBotConn.user.name || subBotConn.user.verifiedName || "Desconocido";
+            console.log(chalk.green.bold(`\n🟢 Sub-bot [${sessionId}] conectado: +${userJid.split("@")[0]} - ${userName}`));
+        } else if (connection === 'close') {
+            const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+            console.log(chalk.red.bold(`\n🔴 Sub-bot [${sessionId}] desconectado. Reason: ${reason}`));
+            // Remove from global.conns when disconnected
+            delete globalThis.conns[sessionId];
+            if (reason === DisconnectReason.loggedOut) {
+                console.log(chalk.bold.redBright(`\n🍀 Sub-bot [${sessionId}] desconectado permanentemente. Borrando credenciales.`));
+                rmSync(sessionPath, { recursive: true, force: true }); // Delete session folder
+            } else {
+                console.log(chalk.bold.yellowBright(`\n🔄 Intentando reconectar Sub-bot [${sessionId}]...`));
+                // Optional: Implement a retry mechanism for sub-bots here if needed
+            }
+        }
+    });
+
+    subBotConn.ev.on('creds.update', saveSubBotCreds.bind(subBotConn, true));
+    // You might want a separate handler for sub-bots or pass messages to the main handler
+    // subBotConn.ev.on('messages.upsert', subBotHandler.bind(subBotConn)); 
+    console.log(chalk.blue(`Attempting to connect sub-bot: ${sessionId}`));
+}
+
+async function startSubBots() {
+    const socketsDir = join(__dirname, 'Sessions', 'Sockets');
+    if (!existsSync(socketsDir)) {
+        mkdirSync(socketsDir, { recursive: true });
+    }
+
+    const sessionIds = readdirSync(socketsDir).filter(name => {
+        const fullPath = join(socketsDir, name);
+        return statSync(fullPath).isDirectory() && /^[0-9a-f]{8}$/.test(name); // Basic check for 8-char hex IDs
+    });
+
+    for (const sessionId of sessionIds) {
+        await createSubBotConnection(sessionId);
+    }
+}
+
+// Call startSubBots after the main bot connection setup
+startSubBots().catch(console.error);
+
 if (!fs.existsSync(`./${sessions}/creds.json`)) {
 if (opcion === '2' || methodCode) {
 opcion = '2'
