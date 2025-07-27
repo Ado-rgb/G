@@ -33,10 +33,8 @@ export async function handler(chatUpdate) {
         try {
             const user = globalThis.db.data.users[m.sender]
             if (typeof user !== "object")
-
                 globalThis.db.data.users[m.sender] = {}
             if (user) {
-
                 if (!("name" in user))
                     user.name = m.name
                 if (!("coins" in user))
@@ -76,7 +74,7 @@ export async function handler(chatUpdate) {
                     chat.bannedGrupo = false
                 if (!isNumber(chat.expired))
                     chat.expired = 0
-} else {
+            } else {
                 globalThis.db.data.chats[m.chat] = {
                     welcome: true,
                     nsfw: false,
@@ -85,11 +83,11 @@ export async function handler(chatUpdate) {
                     antilinks: true,
                     bannedGrupo: false,
                 }                  
-}
+            }
         if (typeof m.text !== "string")
             m.text = ""
-        const user = globalThis.db.data.users[m.sender]
-        const chat = globalThis.db.data.chats[m.chat]
+        // ya existe 'user' arriba, solo declaramos chat
+        const chatData = globalThis.db.data.chats[m.chat]
         const isOwner = [...globalThis.owner.map(([number]) => number)].map(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m.sender)
         if (opts["queque"] && m.text && !(isMods)) {
             const queque = this.msgqueque, time = 1000 * 5
@@ -129,7 +127,7 @@ export async function handler(chatUpdate) {
                         ___dirname,
                         __filename,
                         user,
-                        chat,
+                        chat: chatData,
                         setting
                     })
                 } catch (err) {
@@ -169,7 +167,7 @@ export async function handler(chatUpdate) {
                     chatUpdate,
                     ___dirname,
                     __filename,
-                    chat
+                    chat: chatData
                 })) {
                     continue
                 }
@@ -202,12 +200,11 @@ export async function handler(chatUpdate) {
                 }          
 
                 m.plugin = name
-                if (chat) {
+                if (chatData) {
+                    if (name !== "grupo-mute.js" && chatData?.bannedGrupo && !isOwner) return
+                }
 
-                    if (name !== "grupo-mute.js" && chat?.bannedGrupo && !isOwner) return
-             }
-
-                const adminMode = chat.adminonly || false
+                const adminMode = chatData.adminonly || false
                 const wa = plugins.botAdmin || plugins.admin || plugins.group || plugins || noPrefix || pluginPrefix || m.text.slice(0, 1) === pluginPrefix || plugins.command
                 if (adminMode && !isOwner && m.isGroup && !isAdmin && wa) return
                 if (plugin.owner && !(isOwner)) {
@@ -237,7 +234,7 @@ export async function handler(chatUpdate) {
                     conn: this,
                     participants,
                     groupMetadata,
-                    chat,
+                    chat: chatData,
                     isOwner,
                     isRAdmin,
                     isAdmin,
@@ -250,28 +247,24 @@ export async function handler(chatUpdate) {
                     await plugin.call(this, m, extra)
                 } catch (err) {
                     m.error = err
-                    // console.error(err)
                 } finally {
                     if (typeof plugin.after === "function") {
                         try {
                             await plugin.after.call(this, m, extra)
-                        } catch (err) {
-                            // console.error(err)
-                        }
+                        } catch (err) {}
                     }
                 }
             }
         }
     } catch (err) {
-        // console.error(err)
     } finally {
         if (opts["queque"] && m.text) {
             const quequeIndex = this.msgqueque.indexOf(m.id || m.key.id)
             if (quequeIndex !== -1)
                 this.msgqueque.splice(quequeIndex, 1)
         }
-
-            if (!opts["noprint"]) await (await import(`./lib/console.js`)).default(m, this)
+        if (!opts["noprint"]) await (await import(`./lib/console.js`)).default(m, this)
+    }
         }
     }
 }
