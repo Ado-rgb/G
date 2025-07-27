@@ -77,7 +77,7 @@ let handler = async (m, { conn, args, command, usedPrefix }) => {
   }
 }
 
-handler.help = ['play', 'ytmp3', 'play2', 'ytmp4'].map(v => v + ' <url|nombre>')
+handler.help = ['play', 'ytmp3', 'play2', 'ytmp4'].map(v => v + '')
 handler.tags = ['descargas']
 handler.command = ['play', 'ytmp3', 'play2', 'ytmp4']
 
