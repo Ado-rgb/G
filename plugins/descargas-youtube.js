@@ -47,7 +47,7 @@ let handler = async (m, { conn, args, command, usedPrefix }) => {
           title: globalThis.botname, 
           body: '',
           thumbnailUrl: thumbnail,
-          sourceUrl: url,
+          sourceUrl: 'https://whatsapp.com/channel/0029VbArz9fAO7RGy2915k3O',
           mediaType: 1,
           renderLargerThumbnail: true
         }
