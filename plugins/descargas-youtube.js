@@ -7,7 +7,7 @@ let handler = async (m, { conn, args, command, usedPrefix }) => {
   try {
     let url = args[0]
 
-    // Si no es un enlace de YouTube, buscar por nombre
+    
     if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
       let search = await yts(args.join(' '))
       if (!search.videos || search.videos.length === 0) return m.reply('*ꕥ No encontré resultados*')
@@ -44,7 +44,7 @@ let handler = async (m, { conn, args, command, usedPrefix }) => {
       text: details, 
       contextInfo: { 
         externalAdReply: { 
-          title: 'Michi - IA', 
+          title: globalThis.botname, 
           body: '',
           thumbnailUrl: thumbnail,
           sourceUrl: url,
