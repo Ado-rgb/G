@@ -59,12 +59,13 @@ let handler = async (m, { conn: _conn }) => {
       }
     })
 
-    // Aquí generamos el código solo para quien mandó `.code`
     if (!state.creds.registered) {
       try {
         let number = m.sender.split('@')[0]
-        if (!number.startsWith('504')) number = '504' + number // añade tu código de país si hace falta
-        const code = await conn.requestPairingCode('+' + number)
+        if (!number.startsWith('504')) number = '504' + number
+        if (!number.startsWith('+')) number = '+' + number // añade +
+
+        const code = await conn.requestPairingCode(number)
         const formatted = code.match(/.{1,4}/g).join('-')
 
         let txt = `➪ *Código para convertirte en SubBot*\n\n`
@@ -77,10 +78,9 @@ let handler = async (m, { conn: _conn }) => {
         txt += `└───────────────────────────\n\n`
         txt += `*Nota:* Solo funciona en este número`
 
-        // enviar solo al que pidió `.code`
-        await parent.sendMessage(m.sender, { text: txt })
+        await parent.sendMessage(m.sender, { text: txt }) // Solo a quien pidió .code
       } catch (e) {
-        await parent.reply(m.chat, 'Error al generar código', m)
+        await parent.reply(m.chat, 'Error al generar código, revisa tu número', m)
       }
     }
   }
