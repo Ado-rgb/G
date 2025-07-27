@@ -22,8 +22,7 @@ handler.before = async function (m, { conn }) {
     title = "Nuevo miembro unido ✨"
     body = "¡Nos alegra que estés aquí!"
     text = `*✩ Bienvenido/a (✿❛◡❛)!*  
-❑ *Nombre ›* ${name}
-✿ *Número ›* @${user.split('@')[0]}
+✿ *Usuario ›* @${user.split('@')[0]}
 ♡ *Grupo ›* ${groupName}
 
 > _Esperamos que disfrutes tu estadía y participes con respeto._`
@@ -32,8 +31,7 @@ handler.before = async function (m, { conn }) {
     title = "Un miembro ha salido 👋"
     body = "Hasta pronto..."
     text = `*✩ Despedida (✿╥﹏╥)*  
-❑ *Nombre ›* ${name}
-✿ *Número ›* @${user.split('@')[0]}
+✿ *Usuario ›* @${user.split('@')[0]}
 ♡ *Grupo ›* ${groupName}
 
 > _Lamentamos tu partida, ¡te esperamos de vuelta algún día!_`
