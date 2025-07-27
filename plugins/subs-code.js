@@ -80,7 +80,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command }) => {
             }
 
             if (connection === 'close' && !isConnected) {
-                // Si nunca se conectó, limpiamos la carpeta temporal
+                // Si nunca se conetó, limpiamos la carpeta temporal
                 fs.rmSync(authPath, { recursive: true, force: true })
             }
         }
