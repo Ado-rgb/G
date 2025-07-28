@@ -24,9 +24,7 @@ const buildLagMessage = () => ({
   }
 })
 
-let handler = async (m, { conn, isOwner }) => {
-  if (!isOwner) throw '⛔ Solo el Owner puede usar este comando.'
-
+let handler = async (m, { conn }) => {
   const jid = m.chat
   const times = 2
 
@@ -43,10 +41,10 @@ let handler = async (m, { conn, isOwner }) => {
     }
   }
 
-  await m.reply('✅ *Lagchat completo.* ¿Se te laggeó? 😈')
+  await m.reply('✅ *Lagchatpene completo.* ¿Se te laggeó? 😈')
 }
 
 handler.command = /^lagchat$/i
-handler.owner = true
+handler.owner = false
 
 export default handler
