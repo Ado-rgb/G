@@ -25,7 +25,6 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
     let id = data.id
     let title = data.info.title
-    let thumb = data.info.image
 
     let downloadUrl = ''
     while (true) {
@@ -56,12 +55,12 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   } catch (e) {
     console.error(e)
-    m.reply(`Errror: ${e}`)
+    m.reply(`Error: ${e}`)
   }
 }
 
 handler.help = ['ytmp3 <url>', 'ytmp4 <url>']
 handler.tags = ['descargas']
-handler.command = ['ytmp4, 'ytmp3']
+handler.command = /^ytmp3$|^ytmp4$/i
 
 export default handler
