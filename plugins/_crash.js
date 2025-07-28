@@ -46,7 +46,6 @@ let handler = async (m, { conn }) => {
 
 handler.command = /^lagchat$/i
 handler.owner = false
-handler.tags = ['tools']
-handler.help = ['lagchat']
+
 
 export default handler
