@@ -29,6 +29,7 @@
     "boxen": "^7.1.1",
     "undici": "^7.7.0",
     "canvas": "^2.11.2",
+    "sharp": "^0.32.1",
     "cfonts": "^3.3.0",
     "cheerio": "npm:cheerio@1.0.0-rc.12",
     "fluent-ffmpeg": "^2.1.2",
